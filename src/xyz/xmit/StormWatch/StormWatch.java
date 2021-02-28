@@ -47,10 +47,11 @@ public class StormWatch extends JavaPlugin {
     // Tick timer task.
     private BukkitTask tickTimerTask;
     // Debug flag. Config-specified.
-    private boolean debug;
+    private boolean debug, logOnNewStormEvent;
     // Top-level configuration variables for the plugin.
     private enum BaseConfigurationKeyNames implements StormConfig.ConfigKeySet {
-        DEBUG("debug");
+        DEBUG("debug"),
+        LOG_ON_STORM_EVENT_START("logOnNewStormStart");
         private final String label;
         BaseConfigurationKeyNames(String keyText) { this.label = keyText; }
         public final String getLabel() { return this.label; }
@@ -58,6 +59,7 @@ public class StormWatch extends JavaPlugin {
     // Defines the default configuration for the top-level YML scope.
     private static final HashMap<String, Object> defaultConfig = new HashMap<>() {{
         put(BaseConfigurationKeyNames.DEBUG.label, false);
+        put(BaseConfigurationKeyNames.LOG_ON_STORM_EVENT_START.label, true);
     }};
 
     // MODIFIER SET TO PROTECTED, to prevent outside callers from logging and spoofing as this plugin.
@@ -102,6 +104,11 @@ public class StormWatch extends JavaPlugin {
      * Gets whether the plugin is running in debug mode (i.e. <em>verbose mode</em>).
      */
     public final boolean getDebug() { return this.debug; }
+    /**
+     * Gets whether a newly-spawned Storm sub-type that successfully fires a StormStartEvent will
+     * log to the console.
+     */
+    public final boolean getLogOnNewStormEvent() { return this.logOnNewStormEvent; }
     /**
      * Gets all registered plugin Listener objects.
      * List of any and all Listener objects that have, or will be, registered through this plugin. This

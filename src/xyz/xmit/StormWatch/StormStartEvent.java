@@ -28,6 +28,18 @@ public class StormStartEvent extends Event implements Cancellable {
             this.setCancelled(true);
             return;
         }
+        if(StormWatch.getInstance().getLogOnNewStormEvent()) {
+            StormWatch.log(false,
+                "- Started a new storm of type '" + instance.getName() + "'.");
+            StormWatch.log(false,
+                    "--- Target Player: " + instance.getTargetPlayer().getDisplayName());
+            StormWatch.log(false,
+                    "--- World: " + instance.getTargetPlayer().getWorld().getName());
+            StormWatch.log(false,
+                instance.isCooldownEnabled()
+                    ? "--- Cooldown: " + instance.getInstanceCooldown()
+                    : "--- No cooldown enabled for this type.");
+        }
         StormWatch.log(true, "- Started storm event: " + instance.getName() + " /// ID: " + instance.getStormId());
     }
     /**
