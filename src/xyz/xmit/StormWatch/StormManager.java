@@ -194,11 +194,15 @@ public final class StormManager implements Listener {
      */
     @SuppressWarnings("unused")
     public final boolean unregisterStormType(Class<? extends Storm> stormTypeName) {
-        for(Class<?> c : this.registeredStormTypes) {
+        ArrayList<Class<? extends  Storm>> listOfStormTypes = new ArrayList<>(this.registeredStormTypes);
+        // Use the temporary clone to avoid a ConcurrentModificationException
+        for(Class<? extends Storm> c : listOfStormTypes) {
             try {
                 if (c.equals(stormTypeName)) {
                     if(!Arrays.asList(REGISTERED_STORMTYPES).contains(stormTypeName)) {
                         this.registeredStormTypes.remove(c);
+                        StormWatch.log(false,
+                            "~ STORM EXTENSION DISABLED BY DE-REGISTRATION: " + c.getName());
                     }
                 }
             } catch (Exception ex) {
