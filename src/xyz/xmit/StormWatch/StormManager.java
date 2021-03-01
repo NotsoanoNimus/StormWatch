@@ -8,6 +8,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitRunnable;
 import xyz.xmit.StormWatch.storms.*;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -33,14 +34,16 @@ public final class StormManager implements Listener {
      * node of [<em>typename</em>].storm.enabled (set to <strong>false</strong>) instead of trying to manually
      * unregister them, or recompiling.
      */
-    public final static Class<?>[] REGISTERED_STORMTYPES = {
+    @SuppressWarnings("unchecked")
+    public final static Class<? extends Storm>[] REGISTERED_STORMTYPES =
+        (Class<? extends Storm>[]) new Class[] {
             StormImpact.class, StormShower.class, StormStreak.class
-    };
+        };
 
 
     // Base objects used for managing storm states.
     private final Hashtable<Class<?>, Double> stormChances = new Hashtable<>();   //holds a list of storm occurrence chances.
-    private final ArrayList<Class<?>> registeredStormTypes = new ArrayList<>();   //holds classes that test positively on instantiation
+    private final ArrayList<Class<? extends Storm>> registeredStormTypes = new ArrayList<>();   //holds classes that test positively on instantiation
     // The below variable is used heavily for ID tracking and cooldown enablement.
     private final HashMap<UUID, Tuple<World, Class<? extends Storm>>> currentStormsMap = new HashMap<>();   //holds current UUIDs mapped to world and storm-type
     // This variable is used for chunk ticketing and management. See the chunk manager further down this class.
@@ -51,16 +54,18 @@ public final class StormManager implements Listener {
     /**
      * Gets all configuration-set Storm extension chances that are registered with the StormManager instance.
      */
+    @SuppressWarnings("unused")
     public final Hashtable<Class<?>, Double> getStormChances() { return this.stormChances; }
     /**
      * Gets a list of all registered Storm extensions that are placed into the plugin's rotation, if config-enabled.
      */
-    public final ArrayList<Class<?>> getRegisteredStormTypes() { return this.registeredStormTypes; }
+    public final ArrayList<Class<? extends Storm>> getRegisteredStormTypes() { return this.registeredStormTypes; }
     /**
      * Gets the entire map of currently-occurring Storm events. This is a mapping of a unique identifier to a data
      * tuple representing (a) the world in which the Storm event is occurring on the server, and (b) the extension
      * class of the Storm super-class.
      */
+    @SuppressWarnings("unused")
     public final HashMap<UUID, Tuple<World, Class<? extends Storm>>> getCurrentStormsMap() { return this.currentStormsMap; }
     /**
      * Gets a Tuple containing a current Storm event's World and Storm extension class.
@@ -74,7 +79,7 @@ public final class StormManager implements Listener {
      *
      * @param c The Storm extension class to poll.
      */
-    public final double getStormChance(Class<?> c) { return this.stormChances.get(c); }
+    public final double getStormChance(Class<? extends Storm> c) { return this.stormChances.get(c); }
     /**
      * Gets whether a Storm sub-class currently has an event ongoing in a certain World. This method is highly
      * important for checking cooldowns that are configuration-enabled.
@@ -98,15 +103,14 @@ public final class StormManager implements Listener {
     public StormManager() {
         // Test each requested type for validity on instantiation.
         HashMap<Class<?>, Object> baseClasses = new HashMap<>();
-        for(Class<?> c : StormManager.REGISTERED_STORMTYPES) {
+        for(Class<? extends Storm> c : StormManager.REGISTERED_STORMTYPES) {
             try {
                 // Creating each object on first run SHOULD also instantiate each valid one's configuration.
                 baseClasses.put(  c,  c.cast( c.getDeclaredConstructor().newInstance() )  );
+                this.registeredStormTypes.add(c);
             } catch (Exception e) {
                 StormWatch.log(e, "~ Problem registering storm type: " + c.getName() + " --- DISABLING TYPE");
-                continue;
             }
-            this.registeredStormTypes.add(c);
         }
 
         // Attempt to get each storm's chance from the LEGITIMATE (registered) types.
@@ -142,8 +146,6 @@ public final class StormManager implements Listener {
     }
 
 
-    // Very important API that can be used for other plugins to register their own storm types into the manager for this plugin.
-    //   This same way of verifying Storm extensions is also similarly used in the constructor for shipped storm types.
     /**
      * Very important managerial function that can be used by external plugins and extensions of the Storm class
      * to register their own Storm types and implementations. This is demonstrated in the sample
@@ -175,9 +177,7 @@ public final class StormManager implements Listener {
         }
         return true;
     }
-    // Inverse of the above; attempts to completely unregister a certain storm type.
-    //   NOTE: This function will NOT remove shipped storm types (for security, so other plugins can't unload them),
-    //          so if a user doesn't like a shipped storm type, they must DISABLE IT IN THE CONFIGURATION.
+
     /**
      * Used to request de-registration to completely remove a certain storm type from the StormManager.
      * This function <em>cannot</em> be used to remove shipped storm types, so if a user does not like a
@@ -302,7 +302,7 @@ public final class StormManager implements Listener {
             if(w.getPlayers().size() < 1) { continue; }   //skip the world if no players are in it
             boolean stormStartedThisIterationInWorld = false;
             // Iterate in each world's dynamic Storm objects collection.
-            for(Class<?> c : this.getRegisteredStormTypes()) {
+            for(Class<? extends Storm> c : this.getRegisteredStormTypes()) {
                 // Done first so STORM objects aren't created constantly and wearing down the server.
                 //StormWatch.log("Testing against chance: " + this.mgr.getStormChance(c));
                 if((Math.random() + 0.0001) <= this.getStormChance(c)) {

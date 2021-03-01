@@ -216,10 +216,10 @@ public abstract class Storm implements StormManager.StormCallback {
     // Instantiation fields (can also be used manually or overridden). These are always called on storm start (even if overridden)!
     private void constructBaseStormOptions() throws Exception {
         //// storm chance
-        this.stormChance = new ConfigValue<Double>().get(this.typeName, RequiredConfigurationKeyNames.CHANCE);
+        ///this.stormChance = new ConfigValue<Double>().get(this.typeName, RequiredConfigurationKeyNames.CHANCE);
+        this.stormChance = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.CHANCE);
         //// permitted environments
-        ArrayList<String> envNames = new ConfigValue<ArrayList<String>>()
-                .get(this.typeName, RequiredConfigurationKeyNames.ENVIRONMENTS);
+        ArrayList<String> envNames = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.ENVIRONMENTS);
         for(String s : envNames) { this.permittedWorldEnvironments.add(World.Environment.valueOf(s)); }
         this.permittedWorldEnvironmentsEnforced = new ConfigValue<Boolean>()
                 .get(this.typeName, RequiredConfigurationKeyNames.ENVIRONMENTS_ENFORCED);

@@ -28,7 +28,7 @@ public final class StormConfig {
      *
      * @see Storm
      */
-    public interface ConfigKeySet { public abstract String getLabel(); }
+    public interface ConfigKeySet { String getLabel(); }
 
     /**
      * Generic class used to abstract read-access to the plugin's CONFIG.YML file. General practice to use
@@ -37,12 +37,11 @@ public final class StormConfig {
      *
      * @param <T> The type expected to be returned by an access to the Object's get method,
      *          for the target configuration node.
+     * @deprecated Do not construct this object, use static methods instead.
+     * @see #getConfigValue(String, String)
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked, unused")
     public static final class ConfigValue<T> {
-        /**
-         * See: {@link #get(String, String)}
-         */
         public T get(String stormKey, ConfigKeySet subKey) throws Exception {
             return this.get(stormKey,subKey.getLabel()); }
         /**
@@ -69,6 +68,37 @@ public final class StormConfig {
                 StormWatch.log(false, Level.WARNING, message);
                 throw new Exception(message);
             }
+        }
+    }
+
+    /**
+     * See: {@link #getConfigValue(String, String)}
+     */
+    public static <T> T getConfigValue(String rootKey, ConfigKeySet subNodeKey) throws Exception {
+        return StormConfig.getConfigValue(rootKey, subNodeKey.getLabel()); }
+    /**
+     * See: {@link #getConfigValue(String, String)}
+     */
+    public static <T> T getConfigValue(ConfigKeySet baseKey) throws Exception {
+        return StormConfig.getConfigValue("", baseKey.getLabel()); }
+    /**
+     * Attempts to get a configuration value of type &lt;T&gt; from the plugin's CONFIG.YML file.
+     *
+     * @param rootKey The primary root node of the config tree, typically the TYPE_NAME of a registered Storm type.
+     * @param subNodeKey The sub-node under the root/base key to access.
+     * @return A value of type T from the configuration file, if such a value exists for the node.
+     * @throws Exception If the referenced configuration value is not set, the caller must be notified.
+     */
+    public static <T> T getConfigValue(String rootKey, String subNodeKey) throws Exception {
+        String targetNode = rootKey.isEmpty() ? subNodeKey : rootKey + "." + subNodeKey;
+        try {
+            @SuppressWarnings("unchecked")
+            T val = (T)StormWatch.getStormConfig().config.get(targetNode);
+            return val;
+        } catch (Exception ex) {
+            String message = "There was an issue getting configuration node: " + targetNode;
+            StormWatch.log(false, Level.WARNING, message);
+            throw new Exception(message);
         }
     }
 
@@ -106,10 +136,10 @@ public final class StormConfig {
      * @param typeName The storm's TYPE_NAME field, representing the root node in the configuration file.
      * @param subKey The subkey of the typeName (primary configuration node).
      * @return A tuple of Integer objects representing an inclusive range between the two Integers as bounds.
-     * @throws Exception
+     * @throws Exception Raises any captured Exception objects higher.
      */
     public static Tuple<Integer,Integer> getIntegerRange(String typeName, ConfigKeySet subKey) throws Exception {
-        var x = new ConfigValue<ArrayList<Integer>>().get(typeName, subKey);
+        ArrayList<Integer> x = StormConfig.getConfigValue(typeName, subKey);
         return new Tuple<>(x.get(0), x.get(1));
     }
     /**
@@ -118,10 +148,10 @@ public final class StormConfig {
      * @param typeName The storm's TYPE_NAME field, representing the root node in the configuration file.
      * @param subKey The subkey of the typeName (primary configuration node).
      * @return A tuple of Double objects representing an inclusive range between the two Doubles as bounds.
-     * @throws Exception
+     * @throws Exception Raises any captured Exception objects higher.
      */
     public static Tuple<Double,Double> getDoubleRange(String typeName, ConfigKeySet subKey) throws Exception {
-        var x = new ConfigValue<ArrayList<Double>>().get(typeName, subKey);
+        ArrayList<Double> x = StormConfig.getConfigValue(typeName, subKey);
         return new Tuple<>(x.get(0), x.get(1));
     }
 }
