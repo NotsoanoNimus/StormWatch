@@ -130,7 +130,7 @@ public class StormWatch extends JavaPlugin {
         this.stormConfig = new StormConfig();
         this.stormConfig.setDefaults(StormWatch.defaultConfig);
         try {
-            this.debug = new StormConfig.ConfigValue<Boolean>().get(BaseConfigurationKeyNames.DEBUG);
+            this.debug = StormConfig.getConfigValue(BaseConfigurationKeyNames.DEBUG);
             if(this.debug) {
                 StormWatch.log(false,"You are running the plugin in 'debug' mode. "
                         + "If this wasn't intended, you can turn this off via the configuration and reload the plugin.");

@@ -12,7 +12,7 @@ import java.util.logging.Level;
  * set of classes and methods to wrap the work of accessing the spigot config
  * into an easy-to-use abstraction.
  *
- * @see ConfigValue
+ * @see #getConfigValue(String, String)
  */
 public final class StormConfig {
     /**
@@ -20,56 +20,16 @@ public final class StormConfig {
      */
     private FileConfiguration config;
     // Constructor.
-    public StormConfig() { this.config = StormWatch.instance.getConfig(); }
+    public StormConfig() { this.config = StormWatch.getInstance().getConfig(); }
 
     /**
-     * Used for all configuration keyname indexing on a per-Storm basis, and also for
+     * Used for all configuration key-name indexing on a per-Storm basis, and also for
      * the Storm super-class itself.
      *
      * @see Storm
      */
     public interface ConfigKeySet { String getLabel(); }
 
-    /**
-     * Generic class used to abstract read-access to the plugin's CONFIG.YML file. General practice to use
-     * this class is to declare an instance and immediately access the get method. For example,
-     * <code>String t = new ConfigValue&lt;String&gt;().get(configNode);</code>
-     *
-     * @param <T> The type expected to be returned by an access to the Object's get method,
-     *          for the target configuration node.
-     * @deprecated Do not construct this object, use static methods instead.
-     * @see #getConfigValue(String, String)
-     */
-    @SuppressWarnings("unchecked, unused")
-    public static final class ConfigValue<T> {
-        public T get(String stormKey, ConfigKeySet subKey) throws Exception {
-            return this.get(stormKey,subKey.getLabel()); }
-        /**
-         * See: {@link #get(String, String)}
-         */
-        public T get(ConfigKeySet baseKey) throws Exception {
-            return this.get("", baseKey); }
-        /**
-         * Attempts to get a configuration value of type &lt;T&gt; from the plugin's CONFIG.YML file.
-         *
-         * @param stormKey The primary root node of the config tree, typically the TYPE_NAME
-         *                 of a registered Storm type.
-         * @param subNodeName The sub-node under the stormKey to access.
-         * @return A value of type T from the configuration file, if such a value exists for the node.
-         * @throws Exception If the referenced configuration value is not set, the caller must be notified.
-         */
-        public T get(String stormKey, String subNodeName) throws Exception {
-            String targetNode = stormKey.isEmpty() ? subNodeName : stormKey + "." + subNodeName;
-            try {
-                Object val = StormWatch.getStormConfig().config.get(targetNode);
-                return (T)val;
-            } catch (Exception ex) {
-                String message = "There was an issue getting configuration node: " + targetNode;
-                StormWatch.log(false, Level.WARNING, message);
-                throw new Exception(message);
-            }
-        }
-    }
 
     /**
      * See: {@link #getConfigValue(String, String)}
@@ -131,10 +91,10 @@ public final class StormConfig {
 
 
     /**
-     * Return a configured range of integers as an interable tuple object.
+     * Return a configured range of integers as an iterable tuple object.
      *
      * @param typeName The storm's TYPE_NAME field, representing the root node in the configuration file.
-     * @param subKey The subkey of the typeName (primary configuration node).
+     * @param subKey The sub-key of the typeName (primary configuration node).
      * @return A tuple of Integer objects representing an inclusive range between the two Integers as bounds.
      * @throws Exception Raises any captured Exception objects higher.
      */
@@ -143,10 +103,10 @@ public final class StormConfig {
         return new Tuple<>(x.get(0), x.get(1));
     }
     /**
-     * Return a configured range of doubles as an interable tuple object.
+     * Return a configured range of doubles as an iterable tuple object.
      *
      * @param typeName The storm's TYPE_NAME field, representing the root node in the configuration file.
-     * @param subKey The subkey of the typeName (primary configuration node).
+     * @param subKey The sub-key of the typeName (primary configuration node).
      * @return A tuple of Double objects representing an inclusive range between the two Doubles as bounds.
      * @throws Exception Raises any captured Exception objects higher.
      */

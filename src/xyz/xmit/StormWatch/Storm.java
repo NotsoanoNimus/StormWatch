@@ -11,8 +11,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
-import xyz.xmit.StormWatch.StormConfig.ConfigValue;
-
 import java.util.*;
 import java.util.logging.Level;
 
@@ -202,7 +200,6 @@ public abstract class Storm implements StormManager.StormCallback {
         try {
             this.constructBaseStormOptions();
         } catch (Exception e) {
-            StormWatch.log(e);
             this.log(e,"Possible bad configuration value! Could not instantiate Storm type "
                     + this.typeName + ":   " + e.getMessage());
             this.setCancelled(true); return;
@@ -216,13 +213,13 @@ public abstract class Storm implements StormManager.StormCallback {
     // Instantiation fields (can also be used manually or overridden). These are always called on storm start (even if overridden)!
     private void constructBaseStormOptions() throws Exception {
         //// storm chance
-        ///this.stormChance = new ConfigValue<Double>().get(this.typeName, RequiredConfigurationKeyNames.CHANCE);
         this.stormChance = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.CHANCE);
         //// permitted environments
-        ArrayList<String> envNames = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.ENVIRONMENTS);
+        ArrayList<String> envNames =
+                StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.ENVIRONMENTS);
         for(String s : envNames) { this.permittedWorldEnvironments.add(World.Environment.valueOf(s)); }
-        this.permittedWorldEnvironmentsEnforced = new ConfigValue<Boolean>()
-                .get(this.typeName, RequiredConfigurationKeyNames.ENVIRONMENTS_ENFORCED);
+        this.permittedWorldEnvironmentsEnforced =
+                StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.ENVIRONMENTS_ENFORCED);
         //// getting ranges
         this.cooldownRange = StormConfig.getIntegerRange(this.typeName, RequiredConfigurationKeyNames.COOLDOWN_RANGE);
         this.durationRange = StormConfig.getIntegerRange(this.typeName, RequiredConfigurationKeyNames.DURATION_RANGE);
@@ -235,16 +232,16 @@ public abstract class Storm implements StormManager.StormCallback {
         this.spawnRateRange = StormConfig.getIntegerRange(this.typeName, RequiredConfigurationKeyNames.SPAWN_RATE_RANGE);
         this.spawnAmountRange = StormConfig.getIntegerRange(this.typeName, RequiredConfigurationKeyNames.SPAWN_AMOUNT_RANGE);
         //// windy settings
-        this.isWindy = new ConfigValue<Boolean>().get(this.typeName, RequiredConfigurationKeyNames.WINDY);
-        this.windyChance = new ConfigValue<Double>().get(this.typeName, RequiredConfigurationKeyNames.WINDY_CHANCE);
+        this.isWindy = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.WINDY);
+        this.windyChance = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.WINDY_CHANCE);
         //// storm follows player
-        this.followPlayer = new ConfigValue<Boolean>().get(this.typeName, RequiredConfigurationKeyNames.FOLLOW_PLAYER);
+        this.followPlayer = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.FOLLOW_PLAYER);
         //// time-range check
         this.timeRange = StormConfig.getIntegerRange(this.typeName, RequiredConfigurationKeyNames.TIME_RANGE);
-        this.timeRangeEnforced = new ConfigValue<Boolean>().get(this.typeName, RequiredConfigurationKeyNames.TIME_RANGE_ENFORCED);
+        this.timeRangeEnforced = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.TIME_RANGE_ENFORCED);
         //// instance cooldown, if the storm type has a cooldown enabled
         this.cooldown = this.getRandomInt(this.cooldownRange);
-        this.isCooldownEnabled = new ConfigValue<Boolean>().get(this.typeName, RequiredConfigurationKeyNames.COOLDOWN_ENABLED);
+        this.isCooldownEnabled = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.COOLDOWN_ENABLED);
         //// preset storm duration (changeable by sub-classes before scheduling)
         ////   NOTE: The storm duration is in SERVER TICKS
         this.stormDurationTicks = this.getNewDurationInTicks();
@@ -256,7 +253,7 @@ public abstract class Storm implements StormManager.StormCallback {
     ////// GET methods.
     public final boolean getEnabled() {
         try {
-            return new ConfigValue<Boolean>().get(this.typeName, RequiredConfigurationKeyNames.ENABLED);
+            return StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.ENABLED);
         } catch (Exception ex) {
             this.log(ex, "Unable to get ENABLED status for type " + this.typeName);
             return false;
@@ -299,17 +296,17 @@ public abstract class Storm implements StormManager.StormCallback {
     /////
     // Explosive options/getters for static fields (non-range).
     public final boolean getExplosionEnabled() throws Exception {
-        return new ConfigValue<Boolean>().get(this.typeName, ExplosiveConfigurationKeyNames.EXPLODES); }
+        return StormConfig.getConfigValue(this.typeName, ExplosiveConfigurationKeyNames.EXPLODES); }
     public final boolean getSetsFires() throws Exception {
-        return new ConfigValue<Boolean>().get(this.typeName, ExplosiveConfigurationKeyNames.INCENDIARY); }
+        return StormConfig.getConfigValue(this.typeName, ExplosiveConfigurationKeyNames.INCENDIARY); }
     public final boolean getBreaksBlocks() throws Exception {
-        return new ConfigValue<Boolean>().get(this.typeName, ExplosiveConfigurationKeyNames.BREAKS_BLOCKS); }
+        return StormConfig.getConfigValue(this.typeName, ExplosiveConfigurationKeyNames.BREAKS_BLOCKS); }
     public final double getExplosionDamage() throws Exception {
-        return new ConfigValue<Double>().get(this.typeName, ExplosiveConfigurationKeyNames.EXPLOSION_DAMAGE); }
+        return StormConfig.getConfigValue(this.typeName, ExplosiveConfigurationKeyNames.EXPLOSION_DAMAGE); }
     public final int getExplosionYield() throws Exception {
-        return new ConfigValue<Integer>().get(this.typeName, ExplosiveConfigurationKeyNames.EXPLOSION_YIELD); }
+        return StormConfig.getConfigValue(this.typeName, ExplosiveConfigurationKeyNames.EXPLOSION_YIELD); }
     public final int getExplosionDamageRadius() throws Exception {
-        return new ConfigValue<Integer>().get(this.typeName, ExplosiveConfigurationKeyNames.EXPLOSION_DAMAGE_RADIUS); }
+        return StormConfig.getConfigValue(this.typeName, ExplosiveConfigurationKeyNames.EXPLOSION_DAMAGE_RADIUS); }
 
 
     //////////////////////////////////////////////////////////

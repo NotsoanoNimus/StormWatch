@@ -11,7 +11,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import xyz.xmit.StormWatch.*;
-import xyz.xmit.StormWatch.StormConfig.ConfigValue;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -279,20 +278,20 @@ public final class StormImpact extends Storm implements Listener {
             mysteryBlocksRange = StormConfig.getIntegerRange(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_AMOUNT_RANGE);
             this.mysteryBlocksVelocityFactorRange = StormConfig.getDoubleRange(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_VELOCITY_RANGE);
             this.mysteryVerticalImpulseRange = StormConfig.getDoubleRange(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_VERTICAL_IMPULSE_RANGE);
-            this.mysteryEnabled = new ConfigValue<Boolean>().get(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_ENABLED);
-            this.meteorHollow = new ConfigValue<Boolean>().get(this.typeName, StormImpactConfigurationKeyNames.METEOR_HOLLOW);
-            this.warningSound = new ConfigValue<Boolean>().get(this.typeName, StormImpactConfigurationKeyNames.WARNING_SOUND);
-            this.meteorCompositionMixed = new ConfigValue<Boolean>().get(this.typeName, StormImpactConfigurationKeyNames.METEOR_MATERIALS_MIXED);
-            this.mysterySplashNearbyTypes = new ConfigValue<Boolean>().get(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_USE_NEARBY_TYPES);
-            this.leaveDiamondBlock = new ConfigValue<Boolean>().get(this.typeName, StormImpactConfigurationKeyNames.METEOR_LEAVE_DIAMOND_BLOCK);
-            this.splashImpulseProportional = new ConfigValue<Boolean>().get(this.typeName, StormImpactConfigurationKeyNames.SPLASH_IMPULSE_PROPORTIONAL);
-            this.yieldProportional = new ConfigValue<Boolean>().get(this.typeName, StormImpactConfigurationKeyNames.METEOR_EXPLOSION_YIELD_PROPORTIONAL);
-            this.damageProportional = new ConfigValue<Boolean>().get(this.typeName, StormImpactConfigurationKeyNames.METEOR_EXPLOSION_DAMAGE_PROPORTIONAL);
+            this.mysteryEnabled = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_ENABLED);
+            this.meteorHollow = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_HOLLOW);
+            this.warningSound = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.WARNING_SOUND);
+            this.meteorCompositionMixed = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_MATERIALS_MIXED);
+            this.mysterySplashNearbyTypes = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_USE_NEARBY_TYPES);
+            this.leaveDiamondBlock = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_LEAVE_DIAMOND_BLOCK);
+            this.splashImpulseProportional = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.SPLASH_IMPULSE_PROPORTIONAL);
+            this.yieldProportional = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_EXPLOSION_YIELD_PROPORTIONAL);
+            this.damageProportional = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_EXPLOSION_DAMAGE_PROPORTIONAL);
             //// get meteor composition types
-            compositionTypes = new ConfigValue<ArrayList<String>>().get(this.typeName, StormImpactConfigurationKeyNames.METEOR_MATERIALS);
+            compositionTypes = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_MATERIALS);
             for(String s : compositionTypes) { this.meteorCompositionMaterials.add(Material.valueOf(s)); }
             //// get material types for splash
-            materialTypes = new ConfigValue<ArrayList<String>>().get(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_TYPES);
+            materialTypes = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_TYPES);
             for(String s : materialTypes) { this.mysteryTypes.add(Material.valueOf(s)); }
         } catch (Exception e) {
             this.log(Level.WARNING, "~~~ Skipping spawn of IMPACT meteor: can't get proper configuration values.");

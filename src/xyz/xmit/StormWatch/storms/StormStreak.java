@@ -9,7 +9,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import xyz.xmit.StormWatch.StormWatch;
 import xyz.xmit.StormWatch.Storm;
 import xyz.xmit.StormWatch.StormConfig;
-import xyz.xmit.StormWatch.StormConfig.ConfigValue;
 
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -79,9 +78,10 @@ public class StormStreak extends Storm {
     @Override
     protected final boolean initializeStormTypeProperties() {
         try {
-            this.heightAbovePlayerRange = StormConfig.getIntegerRange(this.typeName, StormStreakConfigurationKeyNames.HEIGHT_ABOVE_PLAYER_RANGE);
+            this.heightAbovePlayerRange =
+                    StormConfig.getIntegerRange(this.typeName, StormStreakConfigurationKeyNames.HEIGHT_ABOVE_PLAYER_RANGE);
             this.streakItemType = EntityType.valueOf(
-                    new ConfigValue<String>().get(this.typeName, StormStreakConfigurationKeyNames.STREAK_ENTITY_TYPE)
+                    StormConfig.getConfigValue(this.typeName, StormStreakConfigurationKeyNames.STREAK_ENTITY_TYPE)
             );
         } catch (Exception ex) {
             this.log(Level.WARNING, "--- Skipping spawn of STREAK storm: can't get proper configuration values.");

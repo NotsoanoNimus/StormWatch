@@ -118,12 +118,18 @@ public final class StormManager implements Listener {
         for(Object o : baseClasses.values()) {
             try {
                 Storm stormObj = (Storm)o;
-                if(stormObj.getEnabled()) {
+                if(stormObj.getEnabled() && !stormObj.isCancelled()) {
                     this.stormChances.put(o.getClass(), stormObj.getStormChance());
                     StormWatch.log(false, "~ STORM TYPE [" + stormObj.getName() + "]: ENABLED. Got chance of " + stormObj.getStormChance());
                 } else {
                     this.stormChances.put(o.getClass(), 0.00);
                     StormWatch.log(false, "~ STORM TYPE [" + stormObj.getName() + "]: DISABLED.");
+                    if(!stormObj.getEnabled()) {
+                        StormWatch.log(false, "~~~ Type is disabled in the configuration.");
+                    }
+                    if(stormObj.isCancelled()) {
+                        StormWatch.log(false, "~~~ The type was CANCELLED. This likely indicates a configuration problem.");
+                    }
                 }
             } catch (Exception e) {
                 StormWatch.log(false, Level.WARNING, "~ Could not get the chance field for class: " + o.getClass().getName());
