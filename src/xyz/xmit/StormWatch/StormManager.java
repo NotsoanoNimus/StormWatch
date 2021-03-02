@@ -332,7 +332,7 @@ public final class StormManager implements Listener {
                     // ----- IMPORTANT: All other checks are done WITHIN the storm class once a Player object is fed to it.
                     //                   This step ends up getting saved and run first-thing in startStorm to prevent the
                     //                   server instantiating a new Storm[Type] object if it's just going to fail or be on cooldown anyhow.
-                    if (!stormStartedThisIterationInWorld
+                    if (!stormStartedThisIterationInWorld && storm.getEnabled()
                             && !(storm.isCooldownEnabled() && this.checkStormTypeAlreadyInProgress(storm.getClass(), w))) {
                         // Pick a random player inside the current target world and start the storm.
                         //   Each storm is assigned a unique identifier.

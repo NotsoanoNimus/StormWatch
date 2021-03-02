@@ -258,6 +258,10 @@ public abstract class Storm implements StormManager.StormCallback {
             this.log(Level.WARNING, "Did not get a valid storm type name. Skipping construction.");
             this.typeName = ""; this.stormId = null;
             this.setCancelled(true); return;
+        } else if(!this.getEnabled()) {
+            this.log(Level.WARNING, "Storm type [" + name + "] is config-disabled.");
+            this.typeName = ""; this.stormId = null;
+            this.setCancelled(true); return;
         }
         this.typeName = name.toLowerCase(Locale.ROOT);
         // Assign the storm a valid UUID.
@@ -310,6 +314,12 @@ public abstract class Storm implements StormManager.StormCallback {
         this.permittedWorldEnvironmentsEnforced =
                 StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.ENVIRONMENTS_ENFORCED);
         //// getting ranges
+
+        /* TEST CODE
+        var yawRangeTest = new StormConfig.RangedValue<Integer>(this.typeName, RequiredConfigurationKeyNames.YAW_RANGE);
+        this.yawRange = yawRangeTest.getValueRange();
+        */
+
         this.cooldownRange = StormConfig.getIntegerRange(this.typeName, RequiredConfigurationKeyNames.COOLDOWN_RANGE);
         this.durationRange = StormConfig.getIntegerRange(this.typeName, RequiredConfigurationKeyNames.DURATION_RANGE);
         this.speedRange = StormConfig.getDoubleRange(this.typeName, RequiredConfigurationKeyNames.SPEED_RANGE);

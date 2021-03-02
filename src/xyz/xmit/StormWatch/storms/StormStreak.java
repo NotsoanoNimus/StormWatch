@@ -72,7 +72,7 @@ public class StormStreak extends Storm {
     /**
      * Gets the range of blocks above the player's head at which streak objects can spawn.
      */
-    public final Tuple<Integer, Integer> getHeightAbovePlayerRange() { return this.getHeightAbovePlayerRange(); }
+    public final Tuple<Integer, Integer> getHeightAbovePlayerRange() { return this.heightAbovePlayerRange; }
 
 
     @Override

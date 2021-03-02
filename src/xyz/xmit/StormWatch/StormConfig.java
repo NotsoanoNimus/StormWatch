@@ -89,6 +89,35 @@ public final class StormConfig {
     }
 
 
+    /*public static final class RangedValue<T extends Number> {
+        private final Random rand = new Random();
+        private final Tuple<T,T> valueRange;
+        private T currentValue;
+        public RangedValue(String typeName, ConfigKeySet targetNode) throws Exception {
+            this.valueRange = StormConfig.getValueRange(typeName, targetNode);
+            this.currentValue = (T)this.getSomeValue();
+        }
+        public final Tuple<T,T> getValueRange() { return this.valueRange; }
+        public final double getSomeValue() {
+            return (this.rand.nextDouble() * (this.valueRange.b().doubleValue() - this.valueRange.a().doubleValue()))
+                    + this.valueRange.a().doubleValue();
+        }
+        public final T getCurrentValue() { return this.currentValue; }
+    }*/
+
+
+    /**
+     * Return a configured range of values of type <em>T</em> as an iterable tuple object.
+     *
+     * @param typeName The storm's TYPE_NAME field, representing the root node in the configuration file.
+     * @param subKey The sub-key of the typeName (primary configuration node).
+     * @return A tuple of Integer objects representing an inclusive range between the two Integers as bounds.
+     * @throws Exception Raises any captured Exception objects higher.
+     */
+    public static <T> Tuple<T,T> getValueRange(String typeName, ConfigKeySet subKey) throws Exception {
+        ArrayList<T> x = StormConfig.getConfigValue(typeName, subKey);
+        return new Tuple<>(x.get(0), x.get(1));
+    }
 
     /**
      * Return a configured range of integers as an iterable tuple object.
