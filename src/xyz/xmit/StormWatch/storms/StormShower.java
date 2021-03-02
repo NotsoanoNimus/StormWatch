@@ -45,11 +45,7 @@ public final class StormShower extends Storm implements Listener {
 
     @Override
     protected final Entity getNextEntity() {
-        Location spawnBase = this.getBaseSpawnLocation().clone();
-        spawnBase.setX(spawnBase.getX() + this.getRandomInt(this.xRange));
-        spawnBase.setY(this.getRandomInt(this.heightRange));
-        spawnBase.setZ(spawnBase.getZ() + this.getRandomInt(this.zRange));
-        spawnBase.setPitch(this.getStormPitch()); spawnBase.setYaw(this.getStormYaw());
+        Location spawnBase = this.getNewRelativeLocation(true, false, true);
         // Spawn the entity.
         Fireball x = (Fireball)spawnBase.getWorld().spawnEntity(spawnBase, EntityType.FIREBALL);
         x.getLocation().setPitch(this.getStormPitch()); x.getLocation().setYaw(this.getStormYaw());

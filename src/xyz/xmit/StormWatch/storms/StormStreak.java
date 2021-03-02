@@ -57,7 +57,8 @@ public class StormStreak extends Storm {
 
 
     private EntityType streakItemType; //type of entity spawned for the streak schedule
-    private Tuple<Integer, Integer> heightAbovePlayerRange; //height above player's head at which objects/entities can spawn
+    ////private Tuple<Integer, Integer> heightAbovePlayerRange; //height above player's head at which objects/entities can spawn
+    private StormConfig.RangedValue<Integer> heightAbovePlayer;
 
 
     // Constructor.
@@ -72,14 +73,15 @@ public class StormStreak extends Storm {
     /**
      * Gets the range of blocks above the player's head at which streak objects can spawn.
      */
-    public final Tuple<Integer, Integer> getHeightAbovePlayerRange() { return this.heightAbovePlayerRange; }
+    //public final Tuple<Integer, Integer> getHeightAbovePlayerRange() { return this.heightAbovePlayerRange; }
 
 
     @Override
     protected final boolean initializeStormTypeProperties() {
         try {
-            this.heightAbovePlayerRange =
-                    StormConfig.getIntegerRange(this.typeName, StormStreakConfigurationKeyNames.HEIGHT_ABOVE_PLAYER_RANGE);
+            this.heightAbovePlayer = new StormConfig.RangedValue<>(this.typeName, StormStreakConfigurationKeyNames.HEIGHT_ABOVE_PLAYER_RANGE);
+            //this.heightAbovePlayerRange =
+            //        StormConfig.getIntegerRange(this.typeName, StormStreakConfigurationKeyNames.HEIGHT_ABOVE_PLAYER_RANGE);
             this.streakItemType = EntityType.valueOf(
                     StormConfig.getConfigValue(this.typeName, StormStreakConfigurationKeyNames.STREAK_ENTITY_TYPE)
             );
@@ -98,11 +100,7 @@ public class StormStreak extends Storm {
 
     @Override
     protected final Entity getNextEntity() {
-        Location spawnBase = new Location(this.getTargetPlayer().getWorld(), this.getBaseSpawnLocation().getX(),
-                this.getBaseSpawnLocation().getY(), this.getBaseSpawnLocation().getZ()); //this.getBaseSpawnLocation().clone();
-        spawnBase.setX(spawnBase.getX() + this.getRandomInt(this.xRange));
-        spawnBase.setY(spawnBase.getY() + this.getRandomInt(this.heightAbovePlayerRange));
-        spawnBase.setZ(spawnBase.getZ() + this.getRandomInt(this.zRange));
+        Location spawnBase = this.getNewRelativeLocation(true, true, true);
         spawnBase.setYaw(this.getStormYaw());
         spawnBase.setPitch(this.getStormPitch());
         // Spawn the fireball and add it to the entities list.

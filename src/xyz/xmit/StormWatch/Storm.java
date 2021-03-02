@@ -239,11 +239,11 @@ public abstract class Storm implements StormManager.StormCallback {
     private Tuple<Integer,Integer> spawnAmountRange; //range of how many can spawn per tick-rate above
     private Tuple<Integer,Integer> pitchRange; //pitch axis range
     private Tuple<Integer,Integer> yawRange; //yaw axis range
-    protected Tuple<Integer,Integer> xRange; //x-spawn range from player base location
-    protected Tuple<Integer,Integer> zRange; //same as above, but for z-axis
-    protected Tuple<Integer,Integer> heightRange; //y-axis absolute min-to-max height at which to spawn entities (this one is NOT relative to the player)
-    protected Tuple<Integer,Integer> timeRange; //minecraft time-range in which storms can occur
-    protected Tuple<Double,Double> speedRange; //range of speed entities can move at
+    private Tuple<Integer,Integer> xRange; //x-spawn range from player base location
+    private Tuple<Integer,Integer> zRange; //same as above, but for z-axis
+    private Tuple<Integer,Integer> heightRange; //y-axis absolute min-to-max height at which to spawn entities (this one is NOT relative to the player)
+    private Tuple<Integer,Integer> timeRange; //minecraft time-range in which storms can occur
+    private Tuple<Double,Double> speedRange; //range of speed entities can move at
     private boolean timeRangeEnforced; //does the storm only spawn in the configured time range?
     private boolean isWindy; //can the storm change direction mid-schedule?
     private double windyChance; //chance for the storm to change direction
@@ -258,14 +258,14 @@ public abstract class Storm implements StormManager.StormCallback {
             this.log(Level.WARNING, "Did not get a valid storm type name. Skipping construction.");
             this.typeName = ""; this.stormId = null;
             this.setCancelled(true); return;
-        } else if(!this.getEnabled()) {
-            this.log(Level.WARNING, "Storm type [" + name + "] is config-disabled.");
-            this.typeName = ""; this.stormId = null;
-            this.setCancelled(true); return;
         }
         this.typeName = name.toLowerCase(Locale.ROOT);
         // Assign the storm a valid UUID.
         this.stormId = UUID.randomUUID();
+        if(!this.getEnabled()) {
+            this.log(Level.WARNING, "Storm type [" + name + "] is config-disabled.");
+            this.setCancelled(true); return;
+        }
 
         this.baseDefaultConfiguration.putAll(defaultConfig);   //add the per-subclass object defaults to the super's default
         // ^^ This can overwrite keys that already exist as well as define custom ones for the calling object.
@@ -375,6 +375,26 @@ public abstract class Storm implements StormManager.StormCallback {
     public final int getStormDurationTicks() { return this.stormDurationTicks; }
     public final int getStormDurationEndPaddingTicks() { return this.stormDurationEndPaddingTicks; }
     public final int getInstanceCooldown() { return this.cooldown; }
+    /**
+     * Gets a new location from configuration-defined coordinate ranges. The returned location can either consider the
+     * configuration ranges to be absolute (i.e. in-game coordinates) between which a storm event can spawn, or a
+     * metric of coordinates that is relative to the player's base location when the storm spawned (this base can also
+     * change through the duration of the spawn, see {@link #isFollowPlayer()}.
+     *
+     * @param isXRelative Is the X coordinate of the new location relative to the storm's base spawn location or absolute?
+     * @param isYRelative Is the Y coordinate of the new location relative to the storm's base spawn location or absolute?
+     * @param isZRelative Is the Z coordinate of the new location relative to the storm's base spawn location or absolute?
+     * @return A new location that is either absolute or relative to the target player, based on the provided boolean values per axis.
+     * @see #isFollowPlayer()
+     * @see #getBaseSpawnLocation()
+     */
+    public final Location getNewRelativeLocation(boolean isXRelative, boolean isYRelative, boolean isZRelative) {
+        Location newLoc = this.baseSpawnLocation.clone();
+        newLoc.setX(isXRelative ? (newLoc.getX() + this.getNewXSpawn()) : this.getNewXSpawn());
+        newLoc.setY(isYRelative ? (newLoc.getY() + this.getNewYSpawn()) : this.getNewYSpawn());
+        newLoc.setZ(isZRelative ? (newLoc.getZ() + this.getNewZSpawn()) : this.getNewZSpawn());
+        return newLoc;
+    }
     public final String getName() { return this.typeName; }
     public final Location getBaseSpawnLocation() { return this.baseSpawnLocation; }
     public final Player getTargetPlayer() { return this.targetPlayer; }
@@ -392,8 +412,11 @@ public abstract class Storm implements StormManager.StormCallback {
     protected final int getNewYaw() { return this.getRandomInt(this.yawRange); }
     protected final int getNewDurationInTicks() { return this.getRandomInt(this.durationRange) * 20; }
     protected final int getNewXSpawn() { return this.getRandomInt(this.xRange); }
+    protected final Tuple<Integer,Integer> getXRange() { return this.xRange; }
     protected final int getNewYSpawn() { return this.getRandomInt(this.heightRange); }
+    protected final Tuple<Integer,Integer> getHeightRange() { return this.heightRange; }
     protected final int getNewZSpawn() { return this.getRandomInt(this.zRange); }
+    protected final Tuple<Integer,Integer> getZRange() { return this.zRange; }
     /////
     // Explosive options/getters for static fields (non-range).
     public final boolean getExplosionEnabled() throws Exception {

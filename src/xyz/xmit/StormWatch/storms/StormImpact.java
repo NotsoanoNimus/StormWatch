@@ -342,14 +342,8 @@ public final class StormImpact extends Storm implements Listener {
     //   Thus, this function should be designed to be called only one time.
     @Override
     protected final Entity getNextEntity() {
-        // Determine a base location near the target player, up in the sky, at which to spawn the large impact meteor.
-        //   Also, get its predetermined and of incidence from the pitch/yaw variables,
-        //   and its velocity based on direction and speed vars.
-        Location spawnBase = this.getBaseSpawnLocation().clone();
-        spawnBase.setX(spawnBase.getX() + this.getRandomInt(this.xRange));
-        spawnBase.setY(this.getRandomInt(this.heightRange));
-        spawnBase.setZ(spawnBase.getZ() + this.getRandomInt(this.zRange));
-
+        // Get a location with relative X-Z coordinates and somewhere in an absolute height range.
+        Location spawnBase = this.getNewRelativeLocation(true, false, true);
         // Forcibly set the meteor yaw to send the meteor toward the player. This changes the "storm yaw".
         spawnBase.setDirection(spawnBase.toVector().subtract(this.getTargetPlayer().getLocation().toVector()));
         this.setStormYaw((int)spawnBase.getYaw());

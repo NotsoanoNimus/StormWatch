@@ -89,7 +89,7 @@ public final class StormConfig {
     }
 
 
-    /*public static final class RangedValue<T extends Number> {
+    public static final class RangedValue<T extends Number> {
         private final Random rand = new Random();
         private final Tuple<T,T> valueRange;
         private T currentValue;
@@ -97,13 +97,14 @@ public final class StormConfig {
             this.valueRange = StormConfig.getValueRange(typeName, targetNode);
             this.currentValue = (T)this.getSomeValue();
         }
-        public final Tuple<T,T> getValueRange() { return this.valueRange; }
-        public final double getSomeValue() {
+        public final Double getSomeValue() {
             return (this.rand.nextDouble() * (this.valueRange.b().doubleValue() - this.valueRange.a().doubleValue()))
                     + this.valueRange.a().doubleValue();
         }
+        public final Tuple<T,T> getValueRange() { return this.valueRange; }
         public final T getCurrentValue() { return this.currentValue; }
-    }*/
+        public final void setNewCurrentValue() { this.currentValue = (T)this.getSomeValue(); }
+    }
 
 
     /**
