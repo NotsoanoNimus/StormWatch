@@ -16,9 +16,14 @@ import java.util.logging.Level;
 
 
 
-// Define an object that holds a StormType to register, along with all storm info managed by StormManager.
 /**
- *
+ * Acts as a base template for any type of custom or shipped weather event that has both a configuration
+ * as well as a chance to target a player per-world and spawn. Relevant configuration nodes are read upon
+ * class instantiation to ensure that the object and in-game conditions are correct to spawn the storm on
+ * the target, all before the {@link #startStorm(Player)} method is utilized to schedule all entity spawns
+ * as appropriate. Generally, the flow of any Storm instance is to initialize, read extended configuration
+ * details, verify all data types are appropriate, schedule entity spawning, and fire a StormEndEvent at
+ * the end of the object's life cycle.
  *
  * @see StormConfig
  * @see StormManager
@@ -27,6 +32,11 @@ import java.util.logging.Level;
 public abstract class Storm implements StormManager.StormCallback {
     // Predefined/External references.
     //// Get REQUIRED configuration key names for each registered storm type (See: StormManager).
+    /**
+     * Contains all <em><strong>required</strong></em> configuration value node names, for use any
+     * custom Storm extension's configuration tree. This is defined in a single place for ease of
+     * access to changing the name of a required configuration key.
+     */
     public enum RequiredConfigurationKeyNames implements StormConfig.ConfigKeySet {
         ENABLED("storm.enabled"),
         ENVIRONMENTS("environment.allowedTypes"),
@@ -52,7 +62,11 @@ public abstract class Storm implements StormManager.StormCallback {
         RequiredConfigurationKeyNames(String keyText) { this.label = keyText; }
         public final String getLabel() { return this.label; }
     }
-    //// OPTIONAL configuration key names for explosive storm types (storms that can have explosive entities).
+    /**
+     * Defines configuration key names required if any implementation of Storm would like to include
+     * explosive entities or events. Technically, this is not a must-have if the parameters of a Storm
+     * implementation's explosion event(s) do <em>not</em> come from the plugin's configuration.
+     */
     public enum ExplosiveConfigurationKeyNames implements StormConfig.ConfigKeySet {
         EXPLODES("entities.explosions.enabled"),
         EXPLOSION_YIELD("entities.explosions.yield"),
@@ -66,12 +80,34 @@ public abstract class Storm implements StormManager.StormCallback {
     }
 
     // Logging methods. Useful for passing instance params to the static function very quickly.
+    /**
+     * @see #log(Exception, String)
+     */
     protected final void log(Exception ex) { this.log(ex, ""); }
+    /**
+     * Passes exceptions with additional error text, up to the base class StormWatch
+     *
+     * @see StormWatch
+     */
     protected final void log(Exception ex, String additionalMsg) {
         if(!additionalMsg.isEmpty()) { StormWatch.log(ex, this.getStormId()+": "+additionalMsg); } else { StormWatch.log(ex); }
     }
+    /**
+     * Log messages only when the <code>debug</code> configuration option is set to <em>true</em>.
+     */
     protected final void debugLog(String logText) { this.log(true, Level.INFO, logText); }
+    /**
+     * Log an <em>INFO</em>-level message to the server console from the plugin instance.
+     *
+     * @see #log(Level, String)
+     */
     protected final void log(String logText) { this.log(false, Level.INFO, logText); }
+    /**
+     * Log a non-debug message to the console from the plugin instance.
+     *
+     * @param lvl The log-level to set on the logged message.
+     * @param logText The actual message to log.
+     */
     protected final void log(Level lvl, String logText) { this.log(false, lvl, logText); }
     // `debugLog` should be used by heir classes.
     private void log(boolean isMsgDebugOnly, Level logLevel, String msg) {
@@ -79,17 +115,58 @@ public abstract class Storm implements StormManager.StormCallback {
 
 
     // Abstract methods.
+    /**
+     * Sets the properties of the child-class instance for use in the entity scheduling routines as needed.
+     * 
+     * @return Whether the implementation's instance could successfully initialize the Storm type's properties.
+     */
     protected abstract boolean initializeStormTypeProperties();   //sets the ranged properties of the instance of the stormtype (speed from speedRange, custom properties, etc).
+    /**
+     * Allows an extending sub-class to define type-specific properties and conditions that must be met for the Storm
+     * scheduling to proceed. This function is run almost immediately when the {@link #startStorm(Player)} method is called.
+     * 
+     * @return Whether the Storm sub-class is able to run given the checked conditions.
+     * @see #startStorm(Player) 
+     */
     protected abstract boolean stormSpecificConditionChecks();   //checks defined in a subclass that define whether a storm is able to start
-    protected abstract Entity getNextEntity();   //entity spawning function
-    protected abstract void doJustBeforeScheduling();   //tasks to do after initialization but before entity spawning
-    protected abstract void doJustAfterScheduling();   //tasks to do after the entities have all been scheduled
+    /**
+     * Create an entity from the Storm, or do Storm-specific actions here. This function implies that it's only used
+     * for spawning entities; however, any scheduled task that runs at the spawn amount rate and at the chosen
+     * interval can be implemented here.
+     * 
+     * @return Either null or a spawned Entity object to add to the list of spawned objects in-game.
+     * @see #startStorm(Player) 
+     */
+    protected abstract Entity getNextEntity();
+    /**
+     * As the name implies, any task or code that should be run just before the schedule for the Storm extension
+     * is created, should be done here.
+     */
+    protected abstract void doJustBeforeScheduling();
+    /**
+     * As the name implies, any task or code that should be run just <em>after</em> the schedule for the Storm
+     * extension is created, should be done here.
+     */
+    protected abstract void doJustAfterScheduling();
+    /**
+     * Task(s) to run after a <em>callback</em> has fired on StormEndEvent. This is primarily used for post-Storm
+     * cleanup after all other tasks have been completed.
+     *
+     * @see StormEndEvent
+     * @see StormManager.StormCallback
+     */
     public abstract void doCleanupAfterStorm();   //tasks to run after the storm ending event fires
 
 
 
     // Inherited values.
-    //// BASE REQUIRED CONFIGURATION FOR ALL STORM TYPES. These can be overridden in the sub-class.
+    /**
+     * A default configuration entered for <strong>all</strong> registered Storm types that instantiate without
+     * one or more of these keys enabled.
+     *
+     * @see #Storm(String, Map)
+     * @see RequiredConfigurationKeyNames
+     */
     protected final HashMap<String, Object> baseDefaultConfiguration = new HashMap<>() {{
         put(RequiredConfigurationKeyNames.ENABLED.label, true);
         put(RequiredConfigurationKeyNames.ENVIRONMENTS.label, new String[]{"NORMAL","THE_END"});
@@ -112,6 +189,12 @@ public abstract class Storm implements StormManager.StormCallback {
         put(RequiredConfigurationKeyNames.WINDY.label, false);
         put(RequiredConfigurationKeyNames.WINDY_CHANCE.label, 0.001);
     }};
+    /**
+     * Default explosive-entity configuration that's provided, but not required, should any extension
+     * of the Storm class wish to use config-enabled explosions.
+     *
+     * @see ExplosiveConfigurationKeyNames
+     */
     protected static final HashMap<String, Object> defaultExplosiveConfiguration = new HashMap<>() {{
         put(ExplosiveConfigurationKeyNames.EXPLODES.label, true);
         put(ExplosiveConfigurationKeyNames.EXPLOSION_YIELD.label, 4);
@@ -121,6 +204,9 @@ public abstract class Storm implements StormManager.StormCallback {
         put(ExplosiveConfigurationKeyNames.EXPLOSION_DAMAGE_RADIUS.label, 5);
     }};
 
+    /**
+     * Single random-number-generator instance reused throughout the Storm class and sub-classes.
+     */
     protected final Random rng = new Random(); //random number generator
     private final UUID stormId; //unique storm object ID
     // Information about the storm.
@@ -137,6 +223,9 @@ public abstract class Storm implements StormManager.StormCallback {
     private final ArrayList<BukkitTask> scheduledSpawns = new ArrayList<>(); //collection of scheduled tasks
     private BukkitTask endEventCall; //pointer to task for calling the terminating event
     //// Provided by parameter.
+    /**
+     * The root configuration key-name of the Storm.
+     */
     protected final String typeName; //Storm type's name (also used for the config node) -- this should be UNIQUE!
     private Player targetPlayer; //player targeted by the current event
     private boolean isCooldownEnabled; //does the storm create locks (i.e. is there a cooldown enabled?)
@@ -148,8 +237,8 @@ public abstract class Storm implements StormManager.StormCallback {
     private Tuple<Integer,Integer> durationRange; //duration range (in SECONDS) of the storm event
     private Tuple<Integer,Integer> spawnRateRange; //range of server ticks for creating new spawn jobs in the scheduler
     private Tuple<Integer,Integer> spawnAmountRange; //range of how many can spawn per tick-rate above
-    protected Tuple<Integer,Integer> pitchRange; //pitch axis range
-    protected Tuple<Integer,Integer> yawRange; //yaw axis range
+    private Tuple<Integer,Integer> pitchRange; //pitch axis range
+    private Tuple<Integer,Integer> yawRange; //yaw axis range
     protected Tuple<Integer,Integer> xRange; //x-spawn range from player base location
     protected Tuple<Integer,Integer> zRange; //same as above, but for z-axis
     protected Tuple<Integer,Integer> heightRange; //y-axis absolute min-to-max height at which to spawn entities (this one is NOT relative to the player)
@@ -271,6 +360,8 @@ public abstract class Storm implements StormManager.StormCallback {
     public final double getStormChance() { return this.stormChance; }
     public final int getStormYaw() { return this.stormYaw; }
     public final int getStormPitch() { return this.stormPitch; }
+    public final Tuple<Integer, Integer> getPitchRange() { return this.pitchRange; }
+    public final Tuple<Integer, Integer> getYawRange() { return this.yawRange; }
     public final int getStormDurationTicks() { return this.stormDurationTicks; }
     public final int getStormDurationEndPaddingTicks() { return this.stormDurationEndPaddingTicks; }
     public final int getInstanceCooldown() { return this.cooldown; }
@@ -502,6 +593,12 @@ public abstract class Storm implements StormManager.StormCallback {
 
 
     // Misc functions
+    @Override
+    public String toString() {
+        if(!this.isCancelled()) {
+            return "Storm sub-class of type [" + this.getName() + "] with ID: " + this.getStormId();
+        } else { return "Cancelled Storm sub-class of type " + this.getName(); }
+    }
     //// Register a subclass as a Listener type to catch events (and be unloaded with the plugin on disable).
     protected final void registerAsListener(Listener instance) {
         if(instance == null) { this.setCancelled(true); return; }
