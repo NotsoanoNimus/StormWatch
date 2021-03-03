@@ -127,10 +127,7 @@ public class StormStreak extends Storm {
     }
 
     @Override
-    protected final void doJustBeforeScheduling() {
-        try { StormWatch.loadChunksNear(this.getBaseSpawnLocation(), 12); }
-        catch (Exception ex) { this.log(ex); }
-    }
+    protected final void doJustBeforeScheduling() {}
 
     @Override
     protected final void doJustAfterScheduling() {}

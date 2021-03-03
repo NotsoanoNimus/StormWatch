@@ -270,8 +270,15 @@ public final class StormManager implements Listener {
         World stormWorld = worldClass.a();
         Class<? extends Storm> stormClass = worldClass.b();
 
-        // If the storm type has a cooldown enabled, get the range and create a cooldown task.
+        // Scheduled a task with the configured delay to unload the Storm's chunks, only if they're not persistent.
         Storm x = endEvent.getInstance();
+        if(x.isLoadsChunks() && !x.isLoadedChunksPersistent()) {
+            new BukkitRunnable() {
+                public void run() { StormWatch.getStormChunkManager().unloadStormChunks(stormId); }
+            }.runTaskLater(StormWatch.instance, endEvent.getInstance().getChunkLoadingUnloadDelay() * 20L);
+        }
+
+        // If the storm type has a cooldown enabled, get the range and create a cooldown task.
         if(x.isCooldownEnabled()) {
             int cooldown = x.getInstanceCooldown(); //x.getSomeCooldown();
             new BukkitRunnable() {

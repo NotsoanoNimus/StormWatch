@@ -6,6 +6,10 @@ This project has been built specifically for Spigot version: `1.16.5`
 
 Documentation on the _StormWatch API_ can be found [on my personal site](https://xmit.xyz/spigot/StormWatch/manual.html).
 
+### TODO
+- [X] Chunk management and configuration on a per-storm basis.
+- [ ] Command interface to enable/disable Storm types until the next reload: `/stormgr enable impact`
+  - [ ] Commands for casting certain storms at target players. Thinking something like: `/stormgr cast impact SomePlayerName`
 
 ## Default Storm Types
 The plugin ships with three default Storm extensions prefabricated, which can be optionally used in the configuration

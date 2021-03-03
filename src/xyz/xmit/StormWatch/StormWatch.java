@@ -44,6 +44,7 @@ public class StormWatch extends JavaPlugin {
     private final ArrayList<Listener> registeredListeners = new ArrayList<>();
     private StormConfig stormConfig;
     private StormManager stormManager;
+    private StormChunkManager stormChunkManager;
     // Tick timer task.
     private BukkitTask tickTimerTask;
     // Debug flag. Config-specified.
@@ -94,6 +95,10 @@ public class StormWatch extends JavaPlugin {
      * Retrieves the plugin-wide single instance of the Storm Config class.
      */
     public static StormConfig getStormConfig() { return StormWatch.getInstance().stormConfig; }
+    /**
+     * Retrieves the plugin-wide single instance of the Storm Chunk Manager class.
+     */
+    public static StormChunkManager getStormChunkManager() { return StormWatch.getInstance().stormChunkManager; }
 
 
         // Generic constructor.
@@ -128,6 +133,7 @@ public class StormWatch extends JavaPlugin {
     public final void onEnable() {
         // Set up the StormConfig instance and copy in the default configuration if needed.
         this.stormConfig = new StormConfig();
+        this.stormChunkManager = new StormChunkManager();
         this.stormConfig.setDefaults(StormWatch.defaultConfig);
         try {
             this.debug = StormConfig.getConfigValue(BaseConfigurationKeyNames.DEBUG);
@@ -170,7 +176,7 @@ public class StormWatch extends JavaPlugin {
             // Cancel the "tick" event task.
             this.tickTimerTask.cancel();
             // Unload any ticketed chunks.
-            for(World w : this.getServer().getWorlds()) { StormWatch.unloadTicketedChunks(w); }
+            this.stormChunkManager.unloadAllChunks();
         } catch (Exception ex) {
             StormWatch.log(false, Level.WARNING, "Problem disabling the plugin.");
             StormWatch.log(ex);
@@ -191,33 +197,4 @@ public class StormWatch extends JavaPlugin {
         return false;
     }
 
-
-
-    // Chunk (un)loading functions.
-    //// THESE WILL BE REPLACED SOON BY A CHUNK MANAGER
-    public static void loadChunksNear(Player p, int chunksDiameter) throws Exception {
-        StormWatch.loadChunksNear(p.getLocation(), chunksDiameter);
-    }
-    public static void loadChunksNear(Location loc, int chunksDiameter) throws Exception {
-        int chunkX = loc.getChunk().getX();
-        int chunkZ = loc.getChunk().getZ();
-        for(int i = -(chunksDiameter/2); i < (chunksDiameter/2); i++) {
-            for(int o = -(chunksDiameter/2); o < (chunksDiameter/2); o++) {
-                Objects.requireNonNull(loc.getWorld())
-                        .getChunkAt(chunkX+i, chunkZ+o).addPluginChunkTicket(StormWatch.instance);
-            }
-        }
-        StormWatch.log(true, "Loaded chunks at ("+chunkX+","+chunkZ+"), diameter of "+chunksDiameter);
-    }
-    public static void unloadTicketedChunks(Location loc) throws Exception {
-        StormWatch.unloadTicketedChunks(Objects.requireNonNull(loc.getWorld())); }
-    public static void unloadTicketedChunks(World w) throws Exception {
-        if(w == null) { return; }
-        Collection<Chunk> impactZones = w.getPluginChunkTickets().getOrDefault(StormWatch.instance, null);
-        if(impactZones == null) { return; }
-        for(Chunk zone : impactZones) {
-            zone.removePluginChunkTicket(StormWatch.instance);   //unload the chunk
-        }
-        StormWatch.log(true, "Unloaded ticketed chunks for world: " + w.getName());
-    }
 }

@@ -74,9 +74,7 @@ public final class StormShower extends Storm implements Listener {
     }
 
     @Override
-    protected final void doJustBeforeScheduling() {
-        try { StormWatch.loadChunksNear(this.getTargetPlayer(), 12); }
-        catch (Exception ex) { this.log(ex); }}
+    protected final void doJustBeforeScheduling() {}
 
     @Override
     protected final void doJustAfterScheduling() {}

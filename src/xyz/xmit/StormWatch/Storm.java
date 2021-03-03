@@ -57,7 +57,11 @@ public abstract class Storm implements StormManager.StormCallback {
         Z_RANGE("entities.spawning.zRangeInBlocks"),
         HEIGHT_RANGE("entities.spawning.absoluteHeightRangeInBlocks"),
         WINDY("storm.windy.enabled"),
-        WINDY_CHANCE("storm.windy.chance");
+        WINDY_CHANCE("storm.windy.chance"),
+        LOAD_CHUNKS("chunkLoading.enabled"),
+        LOAD_CHUNKS_DIAMETER("chunkLoading.chunksRadius"),
+        LOAD_CHUNKS_PERSISTENT("chunkLoading.persistent"),
+        LOAD_CHUNKS_UNLOAD_DELAY("chunkLoading.unloadDelaySeconds");
         public final String label;
         RequiredConfigurationKeyNames(String keyText) { this.label = keyText; }
         public final String getLabel() { return this.label; }
@@ -188,6 +192,10 @@ public abstract class Storm implements StormManager.StormCallback {
         put(RequiredConfigurationKeyNames.HEIGHT_RANGE.label, new int[]{280,380});
         put(RequiredConfigurationKeyNames.WINDY.label, false);
         put(RequiredConfigurationKeyNames.WINDY_CHANCE.label, 0.001);
+        put(RequiredConfigurationKeyNames.LOAD_CHUNKS.label, true);
+        put(RequiredConfigurationKeyNames.LOAD_CHUNKS_DIAMETER.label, 5);
+        put(RequiredConfigurationKeyNames.LOAD_CHUNKS_PERSISTENT.label, false);
+        put(RequiredConfigurationKeyNames.LOAD_CHUNKS_UNLOAD_DELAY.label, 0);
     }};
     /**
      * Default explosive-entity configuration that's provided, but not required, should any extension
@@ -222,14 +230,17 @@ public abstract class Storm implements StormManager.StormCallback {
     private final ArrayList<Entity> spawnedEntities = new ArrayList<>(); //collection of spawned entities; not required to use
     private final ArrayList<BukkitTask> scheduledSpawns = new ArrayList<>(); //collection of scheduled tasks
     private BukkitTask endEventCall; //pointer to task for calling the terminating event
+
     //// Provided by parameter.
     /**
      * The root configuration key-name of the Storm.
      */
     protected final String typeName; //Storm type's name (also used for the config node) -- this should be UNIQUE!
     private Player targetPlayer; //player targeted by the current event
-    private boolean isCooldownEnabled; //does the storm create locks (i.e. is there a cooldown enabled?)
     //// Provided by configuration
+    private boolean isLoadsChunks; //does the storm load chunks?
+    private boolean isLoadedChunksPersistent; //do loaded Storm chunks persist after the storm finishes?
+    private boolean isCooldownEnabled; //does the storm create locks (i.e. is there a cooldown enabled?)
     private double stormChance; //chance for the storm to spawn
     private final ArrayList<World.Environment> permittedWorldEnvironments = new ArrayList<>(); //permitted environments in which the storm can spawn
     private boolean permittedWorldEnvironmentsEnforced = false; //enforce environment checks?
@@ -250,6 +261,8 @@ public abstract class Storm implements StormManager.StormCallback {
     private boolean followPlayer; //does the storm follow the player as it spawns entities?
     private boolean isSchedulingDisabled = false; //should scheduling be skipped?
     private int stormDurationEndPaddingTicks = 0;
+    private int chunkLoadingDiameter; //how many chunks the Storm loads from end-to-end of a square area
+    private int chunkLoadingUnloadDelay; //delay in seconds to wait after the StormEndEvent finishes to unload the Storm's chunks
 
 
     // Default constructor requires an immutable name field and a configuration object.
@@ -315,10 +328,9 @@ public abstract class Storm implements StormManager.StormCallback {
                 StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.ENVIRONMENTS_ENFORCED);
         //// getting ranges
 
-        /* TEST CODE
+        /*//TEST CODE
         var yawRangeTest = new StormConfig.RangedValue<Integer>(this.typeName, RequiredConfigurationKeyNames.YAW_RANGE);
-        this.yawRange = yawRangeTest.getValueRange();
-        */
+        this.yawRange = yawRangeTest.getValueRange();*/
 
         this.cooldownRange = StormConfig.getIntegerRange(this.typeName, RequiredConfigurationKeyNames.COOLDOWN_RANGE);
         this.durationRange = StormConfig.getIntegerRange(this.typeName, RequiredConfigurationKeyNames.DURATION_RANGE);
@@ -341,6 +353,11 @@ public abstract class Storm implements StormManager.StormCallback {
         //// instance cooldown, if the storm type has a cooldown enabled
         this.cooldown = this.getRandomInt(this.cooldownRange);
         this.isCooldownEnabled = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.COOLDOWN_ENABLED);
+        //// chunk loading settings
+        this.chunkLoadingDiameter = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.LOAD_CHUNKS_DIAMETER);
+        this.chunkLoadingUnloadDelay = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.LOAD_CHUNKS_UNLOAD_DELAY);
+        this.isLoadedChunksPersistent = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.LOAD_CHUNKS_PERSISTENT);
+        this.isLoadsChunks = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.LOAD_CHUNKS);
         //// preset storm duration (changeable by sub-classes before scheduling)
         ////   NOTE: The storm duration is in SERVER TICKS
         this.stormDurationTicks = this.getNewDurationInTicks();
@@ -375,6 +392,10 @@ public abstract class Storm implements StormManager.StormCallback {
     public final int getStormDurationTicks() { return this.stormDurationTicks; }
     public final int getStormDurationEndPaddingTicks() { return this.stormDurationEndPaddingTicks; }
     public final int getInstanceCooldown() { return this.cooldown; }
+    public final int getChunkLoadingDiameter() { return this.chunkLoadingDiameter; }
+    public final int getChunkLoadingUnloadDelay() { return this.chunkLoadingUnloadDelay; }
+    public final boolean isLoadsChunks() { return this.isLoadsChunks; }
+    public final boolean isLoadedChunksPersistent() { return this.isLoadedChunksPersistent; }
     /**
      * Gets a new location from configuration-defined coordinate ranges. The returned location can either consider the
      * configuration ranges to be absolute (i.e. in-game coordinates) between which a storm event can spawn, or a
@@ -531,6 +552,12 @@ public abstract class Storm implements StormManager.StormCallback {
         Bukkit.getPluginManager().callEvent(stormEvent);
         // Set the storm type to started.
         this.setStormIsOngoing(true);
+        // Load the chunks as applicable.
+        if(this.isLoadsChunks()) {
+            try {
+                StormWatch.getStormChunkManager().loadChunksNear(this.getTargetPlayer(), this.getChunkLoadingDiameter(), this.getStormId());
+            } catch (Exception ex) { this.log(ex); }
+        }
 
         // Schedule the spawn tasks, if enabled.
         if(!this.isSchedulingDisabled()) {

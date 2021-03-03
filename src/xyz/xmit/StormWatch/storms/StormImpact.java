@@ -321,12 +321,6 @@ public final class StormImpact extends Storm implements Listener {
     @Override
     protected final void doJustBeforeScheduling() {
         this.setSchedulingDisabled(true);   //disable entity spawn schedule
-        // Load up a radius of 10 chunks from the base location.
-        try {
-            StormWatch.loadChunksNear(this.getBaseSpawnLocation(), 10);
-        } catch (Exception e) {
-            this.log(e);
-        }
     }
 
     @Override
@@ -409,9 +403,6 @@ public final class StormImpact extends Storm implements Listener {
 
     @Override
     public final void doCleanupAfterStorm() {
-        // Unload the loaded chunks.
-        try { StormWatch.unloadTicketedChunks(this.getBaseSpawnLocation().getWorld()); }
-        catch (Exception e) { this.log(e); }
         // Unregister self as an active plugin event listener
         try { HandlerList.unregisterAll(this); } catch (Exception e) { this.log(e); }
     }
