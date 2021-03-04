@@ -6,6 +6,17 @@ import org.bukkit.entity.Player;
 
 import java.util.*;
 
+
+/**
+ * Class to manage all Storm instance chunk-loading, so that the end event of one Storm instance
+ * will not unload the chunks being used simultaneously by other Storm instances that are still
+ * in the ongoing state. The class merely consists of an internal list that's manipulated as
+ * StormStartEvent events are captured in the StormManager Listener object.
+ *
+ * @see Storm
+ * @see StormManager
+ * @see StormEndEvent
+ */
 public class StormChunkManager {
     private final HashMap<UUID, ArrayList<Chunk>> stormsToChunkStrings = new HashMap<>();
 

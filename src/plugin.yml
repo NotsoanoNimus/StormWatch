@@ -7,11 +7,11 @@ load: POSTWORLD
 author: NotsoanoNimus <spigot-dev@xmit.xyz>
 website: xmit.xyz
 commands:
-  stormwatch:
-    description: Primary StormWatch control command.
-    permission-message: You don't have permission to use that command.
+  stormgr:
+    description: Primary StormWatch control command. Used to enable/disable Storm types, and also call them on-demand.
+    permission-message: You don't have permission to manage Storm events on this server.
     usage: "Usage: /<command>   { start | stop | newimpact }   [ OPTIONS ]"
 permissions:
-  meteorshower.*:
+  stormwatch.*:
     description: Access to all StormWatch commands.
     default: op
