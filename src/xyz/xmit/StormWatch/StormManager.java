@@ -214,9 +214,6 @@ public final class StormManager implements Listener {
     }
 
 
-    //// Chunk management section.
-    /*  AWAITING IMPLEMENTATION  */
-
 
     /**
      * Registers a newly-spawned storm instance as a valid storm, which will remain until the

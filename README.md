@@ -10,6 +10,19 @@ Documentation on the _StormWatch API_ can be found [on my personal site](https:/
 - [X] Chunk management and configuration on a per-storm basis.
 - [ ] Command interface to enable/disable Storm types until the next reload: `/stormgr enable impact`
   - [ ] Commands for casting certain storms at target players. Thinking something like: `/stormgr cast impact SomePlayerName`
+  - [ ] Should also add an option for any Storm types to have their own extra command parsing for `cast` calls; consider:
+```
+/stormgr cast impact SomePlayerName [opt1 opt2 ... optN]
+--- Create an Impact event, instantiated for SomePlayerName
+----- The rest of the options are passed to the Impact event to handle:
+opt1 = DIRECT ---> Meteor spawns right over the player and rushes downward. 
+opt2 = HARMLESS -> The meteor doesn't do any damage or explode.
+
+So the full command becomes...
+/stormmgr cast impact SomePlayerName DIRECT HARMLESS
+
+All Storm types can have this extensibility built in.
+```
 
 ## Default Storm Types
 The plugin ships with three default Storm extensions prefabricated, which can be optionally used in the configuration
