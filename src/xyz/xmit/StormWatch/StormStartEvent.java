@@ -36,7 +36,7 @@ public class StormStartEvent extends Event implements Cancellable {
             StormWatch.log(false,
                     "--- World: " + instance.getTargetPlayer().getWorld().getName());
             StormWatch.log(false,
-                instance.isCooldownEnabled()
+                instance.isCooldownEnabled() && !instance.isCalledByCommand()
                     ? "--- Cooldown: " + instance.getInstanceCooldown()
                     : "--- No cooldown enabled for this type.");
         }

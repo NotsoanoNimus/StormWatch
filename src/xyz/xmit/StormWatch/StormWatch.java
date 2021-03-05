@@ -160,6 +160,9 @@ public class StormWatch extends JavaPlugin {
                 Bukkit.getPluginManager().callEvent(c);
             }
         }.runTaskTimer(this, (StormWatch.TickRate*2L), StormWatch.TickRate); //delay of TickRate*2 before starting
+
+        // Register the primary control command executor.
+        this.getCommand("stormgr").setExecutor(new StormWatchCommandExecutor());
     }
 
 
@@ -181,20 +184,6 @@ public class StormWatch extends JavaPlugin {
             StormWatch.log(false, Level.WARNING, "Problem disabling the plugin.");
             StormWatch.log(ex);
         }
-    }
-
-
-    /**
-     * Fired when a command registered to this plugin is entered.
-     */
-    @Override
-    public final boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        // Make sure a player sent the command, and that they have permission to do so, before parsing.
-        if(sender instanceof Player) {
-            Player p = (Player)sender;
-            return true;
-        }
-        return false;
     }
 
 }

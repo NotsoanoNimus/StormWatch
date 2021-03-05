@@ -222,6 +222,7 @@ public abstract class Storm implements StormManager.StormCallback {
     private boolean isStarted = false; //has the startStorm method been invoked (and gotten past initial checks)?
     private boolean cancelled = false; //is the storm attempting to be cancelled?
     private boolean isSingleSpawnPerJob = false; //can be set by heirs to force the `spawnAmountRange` values to be ignored
+    private boolean isCalledByCommand = false; //was the storm started by command
     // ^^^ See the "StormSandstorm" module for why this can certainly be a useful tool!
     private Location baseSpawnLocation; //can either follow the player or stay stationary (see below)
     private int stormPitch, stormYaw; //storm "direction", defined by a value between a configurable range
@@ -382,6 +383,7 @@ public abstract class Storm implements StormManager.StormCallback {
     public final boolean isSchedulingDisabled() { return this.isSchedulingDisabled; }
     public final boolean isTimeRangeEnforced() { return this.timeRangeEnforced; }
     public final boolean isPermittedWorldEnvironmentsEnforced() { return this.permittedWorldEnvironmentsEnforced; }
+    public final boolean isCalledByCommand() { return this.isCalledByCommand; }
     public final boolean isFollowPlayer() { return this.followPlayer; }
     public final boolean isSingleSpawnPerJob() { return this.isSingleSpawnPerJob; }
     public final double getStormChance() { return this.stormChance; }
@@ -466,6 +468,8 @@ public abstract class Storm implements StormManager.StormCallback {
         }
         this.cancelled = isCancelled;
     }
+    // Set the Storm as command generated (not "natural").
+    protected final void setIsCalledByCommand() { this.isCalledByCommand = true; }
     // Directly change the cooldown, if desired.
     protected final void setInstanceCooldown(int cooldownInSeconds) { this.cooldown = cooldownInSeconds; }
     // Set the direction of the storm entities based on the yaw/pitch ranges.

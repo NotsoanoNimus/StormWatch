@@ -229,11 +229,13 @@ public final class StormManager implements Listener {
     public final void newStorm(StormStartEvent startEvent) {
         var newWorld = startEvent.getWorld();
         Storm t = startEvent.getInstance();
-        if(this.queryCurrentStormEvent(t.getStormId()) == null) {
-            this.currentStormsMap.put(t.getStormId(), new Tuple<>(newWorld, t.getClass()));
-        } else {
-            StormWatch.log(false, Level.WARNING,
-            "~ A duplicate registration attempt was detected for ID: " + t.getStormId());
+        if(!t.isCalledByCommand()) {
+            if (this.queryCurrentStormEvent(t.getStormId()) == null) {
+                this.currentStormsMap.put(t.getStormId(), new Tuple<>(newWorld, t.getClass()));
+            } else {
+                StormWatch.log(false, Level.WARNING,
+                        "~ A duplicate registration attempt was detected for ID: " + t.getStormId());
+            }
         }
     }
 
@@ -251,32 +253,32 @@ public final class StormManager implements Listener {
     public final void completeStorm(StormEndEvent endEvent) {
         // When a storm's UUID completes, refresh the object in the stormsPerWorld
         //   table to generate new Storm parameters for that type.
+        Storm x = endEvent.getInstance();
         UUID stormId = endEvent.getStormId();
         // Make sure this is a valid event that was being tracked.
-        if(this.queryCurrentStormEvent(stormId) == null) {
+        if(this.queryCurrentStormEvent(stormId) == null && !x.isCalledByCommand()) {
             StormWatch.log(false, Level.WARNING,
                 "~ StormEndEvent captured without a valid UUID: " + stormId.toString());
         }
-        // Parse information for this ID from the registered events.
-        Tuple<World, Class<? extends Storm>> worldClass = this.queryCurrentStormEvent(stormId);
-        if(worldClass == null) {
-            StormWatch.log(false, Level.WARNING,
-                "~ Storm was registered but didn't have any associations: " + stormId);
-            return;
-        }
-        World stormWorld = worldClass.a();
-        Class<? extends Storm> stormClass = worldClass.b();
 
         // Scheduled a task with the configured delay to unload the Storm's chunks, only if they're not persistent.
-        Storm x = endEvent.getInstance();
         if(x.isLoadsChunks() && !x.isLoadedChunksPersistent()) {
             new BukkitRunnable() {
                 public void run() { StormWatch.getStormChunkManager().unloadStormChunks(stormId); }
             }.runTaskLater(StormWatch.instance, endEvent.getInstance().getChunkLoadingUnloadDelay() * 20L);
         }
 
-        // If the storm type has a cooldown enabled, get the range and create a cooldown task.
-        if(x.isCooldownEnabled()) {
+        // If the storm type has a cooldown enabled and is "organic", get the range and create a cooldown task.
+        if(x.isCooldownEnabled() && !x.isCalledByCommand()) {
+            // Parse information for this ID from the registered events.
+            Tuple<World, Class<? extends Storm>> worldClass = this.queryCurrentStormEvent(stormId);
+            if(worldClass == null) {
+                StormWatch.log(false, Level.WARNING,
+                        "~ Storm was registered but didn't have any associations: " + stormId);
+                return;
+            }
+            World stormWorld = worldClass.a();
+            Class<? extends Storm> stormClass = worldClass.b();
             int cooldown = x.getInstanceCooldown(); //x.getSomeCooldown();
             new BukkitRunnable() {
                 public void run() {
@@ -286,7 +288,7 @@ public final class StormManager implements Listener {
                 }
             }.runTaskLater(StormWatch.instance, cooldown * 20L);
             StormWatch.log(true, "~ Scheduling removal of storm ID " + stormId + " after cooldown of " + cooldown + " seconds.");
-        } else {
+        } else if(!x.isCooldownEnabled() && !x.isCalledByCommand()) {
             // Otherwise, remove the entry from the tracker right now.
             this.currentStormsMap.remove(stormId);
             StormWatch.log(true, "~ Removed storm with ID: " + stormId + "  (no cooldown locking)");
