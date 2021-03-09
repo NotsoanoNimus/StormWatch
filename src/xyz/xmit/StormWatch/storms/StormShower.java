@@ -44,6 +44,9 @@ public final class StormShower extends Storm implements Listener {
     }
 
     @Override
+    protected void setPropertiesFromCommand(String[] cmdArgs) { }
+
+    @Override
     protected final Entity getNextEntity() {
         Location spawnBase = this.getNewRelativeLocation(true, false, true);
         // Spawn the entity.

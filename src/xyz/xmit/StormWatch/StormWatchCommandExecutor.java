@@ -70,14 +70,14 @@ public class StormWatchCommandExecutor implements CommandExecutor {
         }
 
         Class<? extends Storm> chosenStorm;
+        Storm newStorm;
         try {
             chosenStorm = (Class<? extends Storm>)Class.forName(  this.typesToClassPaths.get( args[1] )  );
             if(!StormWatch.getStormManager().getRegisteredStormTypes().contains(chosenStorm)) {
                 throw new Exception("Not an enabled Storm type!");
             }
-            Storm newStorm = (Storm)chosenStorm.cast(chosenStorm.getDeclaredConstructor().newInstance());
+            newStorm = (Storm)chosenStorm.cast(chosenStorm.getDeclaredConstructor().newInstance());
             newStorm.setIsCalledByCommand();
-            newStorm.startStorm((Player)sender);
         } catch (Exception ex) {
             ((Player)sender).sendMessage("That is not a currently-registered Storm type.");
             StormWatch.log(ex);
@@ -86,7 +86,8 @@ public class StormWatchCommandExecutor implements CommandExecutor {
 
         switch(args[0].toLowerCase(Locale.ROOT)) {
             case "cast":
-                return this.castCommand(chosenStorm, this.shiftStringArray(this.shiftStringArray(args)));
+                return this.castCommand(chosenStorm, newStorm,
+                        this.shiftStringArray(this.shiftStringArray(args)));
             case "toggle":
                 return this.toggleStorm(chosenStorm, args[2]);
             default:
@@ -96,7 +97,21 @@ public class StormWatchCommandExecutor implements CommandExecutor {
     }
 
 
-    private boolean castCommand(Class<? extends Storm> storm, String[] castParams) {
+    private boolean castCommand(Class<? extends Storm> storm, Storm s, String[] castParams) {
+        String tgtPlayer = castParams[0];
+        Player target;
+        try {
+            target = StormWatch.getInstance().getServer().getPlayer(tgtPlayer);
+            if(target == null) { throw new Exception("Target player does not exist."); }
+        } catch (Exception ex) {
+            StormWatch.log(ex);
+            this.whoSent.sendMessage("The target player '" + tgtPlayer + "' could not be found.");
+            return false;
+        }
+        // After getting the valid target player: give the Storm the params array and start it.
+        s.setPropertiesFromCommand(castParams);
+        if(!s.isCancelled()) { s.startStorm(target); }
+        else { this.whoSent.sendMessage("The Storm event you tried to raise has been prematurely cancelled."); }
         return true;
     }
 

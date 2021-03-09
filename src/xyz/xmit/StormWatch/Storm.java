@@ -134,6 +134,19 @@ public abstract class Storm implements StormManager.StormCallback {
      */
     protected abstract boolean stormSpecificConditionChecks();   //checks defined in a subclass that define whether a storm is able to start
     /**
+     * Sets properties for inorganic (i.e. command-called) Storms. Useful for when different types of parameters
+     * that are sent via the command line should be able to have a changing effect on the spawned Storm schedule
+     * (or other properties thereof). Storms that should be CANCELLED based on provided parameters can always
+     * use the {@link #setCancelled(boolean)} method inside of this call, since the CommandExecutor is designed
+     * to check for a cancelled Storm before starting it.
+     *
+     * @param cmdArgs The remaining parameters sent via the command used the initiate the inorganic Storm.
+     *                The first String value of this array will ALWAYS be the Player's name whom the Storm targets.
+     * @see StormWatchCommandExecutor
+     * @see #setCancelled(boolean) 
+     */
+    protected abstract void setPropertiesFromCommand(String[] cmdArgs);
+    /**
      * Create an entity from the Storm, or do Storm-specific actions here. This function implies that it's only used
      * for spawning entities; however, any scheduled task that runs at the spawn amount rate and at the chosen
      * interval can be implemented here.

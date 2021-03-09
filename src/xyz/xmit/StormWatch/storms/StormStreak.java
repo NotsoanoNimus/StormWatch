@@ -99,6 +99,9 @@ public class StormStreak extends Storm {
     }
 
     @Override
+    protected void setPropertiesFromCommand(String[] cmdArgs) { }
+
+    @Override
     protected final Entity getNextEntity() {
         Location spawnBase = this.getNewRelativeLocation(true, true, true);
         spawnBase.setYaw(this.getStormYaw());
