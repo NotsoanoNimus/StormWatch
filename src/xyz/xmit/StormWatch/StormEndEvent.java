@@ -19,19 +19,20 @@ public final class StormEndEvent extends Event implements Cancellable {
 
     private final UUID uniqueId;
     private final Storm instance;
-    // Constructor.
+
     public StormEndEvent(UUID stormId, StormManager.StormCallback callback, Storm inst) {
         this.uniqueId = stormId; this.instance = inst;
         if(stormId == null) {
             StormWatch.log(false, Level.WARNING,
             "A storm event tried to fire an 'End' event but had no unique ID; cancelling."
-                + " Is the storm type configured properly?");
+                + "\nIs the storm type configured properly?");
             this.setCancelled(true);
             return;
         }
         callback.doCleanupAfterStorm();
         StormWatch.log(true, "- Ending storm event: " + stormId.toString());
     }
+
     /**
      * Gets the ending storm's unique ID.
      */

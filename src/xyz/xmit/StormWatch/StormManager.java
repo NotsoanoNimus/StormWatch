@@ -45,8 +45,6 @@ public final class StormManager implements Listener {
     private final ArrayList<Class<? extends Storm>> registeredStormTypes = new ArrayList<>();   //holds classes that test positively on instantiation
     // The below variable is used heavily for ID tracking and cooldown enablement.
     private final HashMap<UUID, Tuple<World, Class<? extends Storm>>> currentStormsMap = new HashMap<>();   //holds current UUIDs mapped to world and storm-type
-    // This variable is used for chunk ticketing and management. See the chunk manager further down this class.
-    ////private final HashMap<UUID, ArrayList<Chunk>> currentStormChunkTickets = new HashMap<>();
 
 
     // Generic functions for managing storms.
@@ -119,24 +117,30 @@ public final class StormManager implements Listener {
                 Storm stormObj = (Storm)o;
                 if(stormObj.getEnabled() && !stormObj.isCancelled()) {
                     this.stormChances.put(o.getClass(), stormObj.getStormChance());
-                    StormWatch.log(false, "~ STORM TYPE [" + stormObj.getName() + "]: ENABLED. Got chance of " + stormObj.getStormChance());
+                    StormWatch.log(false,
+                            "~ STORM TYPE [" + stormObj.getName() + "]: ENABLED; spawn chance of " + stormObj.getStormChance());
                 } else {
                     this.stormChances.put(o.getClass(), 0.00);
-                    StormWatch.log(false, "~ STORM TYPE [" + stormObj.getName() + "]: DISABLED.");
+                    StormWatch.log(false,
+                            "~ STORM TYPE [" + stormObj.getName() + "]: NOT ENABLED.");
                     if(!stormObj.getEnabled()) {
-                        StormWatch.log(false, "~~~ Type is disabled in the configuration.");
+                        StormWatch.log(false,
+                                "~~~ Type is disabled in the configuration.");
                     }
                     if(stormObj.isCancelled()) {
-                        StormWatch.log(false, "~~~ The type was CANCELLED. This likely indicates a configuration problem.");
+                        StormWatch.log(false,
+                                "~~~ The type was CANCELLED. This likely indicates a configuration problem.");
                     }
                 }
             } catch (Exception e) {
-                StormWatch.log(false, Level.WARNING, "~ Could not get the chance field for class: " + o.getClass().getName());
+                StormWatch.log(false, Level.WARNING,
+                        "~ Could not get the chance field for class: " + o.getClass().getName());
                 StormWatch.log(e);
             }
         }
 
         // Make sure all typeName fields in each Storm type are UNIQUE!
+        // TODO: Is this actually even doing anything???
         ArrayList<String> typeNames = new ArrayList<>();
         for(Object o : baseClasses.values()) {
             try {
@@ -154,7 +158,7 @@ public final class StormManager implements Listener {
     /**
      * Very important managerial function that can be used by external plugins and extensions of the Storm class
      * to register their own Storm types and implementations. This is demonstrated in the sample
-     * <a href="https://github.com/NotsoanoNimus/darude-plugin.git" target="_blank">Darude (Sandstorm) Plugin</a>,
+     * <a href="https://github.com/NotsoanoNimus/Darude-Sandstorm-Test" target="_blank">Darude (Sandstorm) Plugin</a>,
      * which is an entirely external Spigot/Bukkit plugin that sources this function.
      *
      * @param c External storm-type (sub-class of Storm) to register with the plugin.
@@ -162,6 +166,9 @@ public final class StormManager implements Listener {
      */
     @SuppressWarnings("unused")
     public final boolean registerNewStormType(Class<? extends Storm> c) {
+        // Prevent duplicate Storm type registrations. This is very important since TYPE_NAME is what
+        //   the config.yml write operations use as the root config key. So with the following code,
+        //   bad actors are IDEALLY not allowed to overwrite other configurations.
         for(Object o : this.registeredStormTypes) {
             if(c.getName().toLowerCase(Locale.ROOT).equals(o.getClass().getName().toLowerCase(Locale.ROOT))) {
                 StormWatch.log(false, Level.WARNING,
@@ -175,9 +182,11 @@ public final class StormManager implements Listener {
             // Provided it casts properly, it's a valid type. Register it.
             this.registeredStormTypes.add(c);
             this.stormChances.put(c, z.getStormChance());
-            StormWatch.log(false, "~ STORM TYPE [" + z.getName() + "] ENABLED. Got chance of: " + z.getStormChance());
+            StormWatch.log(false,
+                    "~ STORM TYPE [" + z.getName() + "] ENABLED; spawn chance of: " + z.getStormChance());
         } catch(Exception e) {
-            StormWatch.log(false, Level.WARNING, "~ Problem registering storm type " + c.getName() + " --- DISABLED this type!");
+            StormWatch.log(false, Level.WARNING,
+                    "~ Problem registering storm type " + c.getName() + " --- DISABLED this type!");
             return false;
         }
         return true;
@@ -186,26 +195,26 @@ public final class StormManager implements Listener {
     /**
      * Used to request de-registration to completely remove a certain storm type from the StormManager.
      * This function <em>cannot</em> be used to remove shipped storm types, so if a user does not like a
-     * certain plugin, the should instead <strong>disable it from the configuration file</strong>.
+     * certain built-in, they should instead <strong>disable it from the configuration file</strong>.
      *
-     * @param stormTypeName The Storm sub-class to attempt to de-register.
+     * @param stormType The Storm sub-class to attempt to unregister.
      * @return Whether or not the storm type was successfully unregistered from the manager.
      */
     @SuppressWarnings("unused")
-    public final boolean unregisterStormType(Class<? extends Storm> stormTypeName) {
+    public final boolean unregisterStormType(Class<? extends Storm> stormType) {
         ArrayList<Class<? extends  Storm>> listOfStormTypes = new ArrayList<>(this.registeredStormTypes);
         // Use the temporary clone to avoid a ConcurrentModificationException
         for(Class<? extends Storm> c : listOfStormTypes) {
             try {
-                if (c.equals(stormTypeName)) {
-                    if(!Arrays.asList(REGISTERED_STORMTYPES).contains(stormTypeName)) {
+                if (c.equals(stormType)) {
+                    if(!Arrays.asList(StormManager.REGISTERED_STORMTYPES).contains(stormType)) {
                         this.registeredStormTypes.remove(c);
                         StormWatch.log(false,
                             "~ STORM EXTENSION DISABLED BY DE-REGISTRATION: " + c.getName());
                     }
                 }
             } catch (Exception ex) {
-                StormWatch.log(false, "~ Failed to unregister storm type: " + stormTypeName);
+                StormWatch.log(false, "~ Failed to unregister storm type: " + stormType);
                 StormWatch.log(ex);
             }
         }
@@ -233,14 +242,17 @@ public final class StormManager implements Listener {
                 this.currentStormsMap.put(t.getStormId(), new Tuple<>(newWorld, t.getClass()));
             } else {
                 StormWatch.log(false, Level.WARNING,
-                        "~ A duplicate registration attempt was detected for ID: " + t.getStormId());
+                        "~ Duplicate event registration attempt detected. ID: " + t.getStormId() + " /// World: "
+                                + newWorld.getName() + " /// Storm subclass: " + t.getClass().getName());
             }
         }
     }
 
     /**
      * Handles a StormEndEvent to either (a) remove the Storm instance ID from the tracked storms
-     * list, or (b) engage a cooldown on the storm type for that world (if enabled).
+     * list, or (b) engage a cooldown on the storm type for that world (if enabled). If the event was
+     * triggered by a Storm that was spawned by command, then most of this method does not apply except
+     * chunk-loading and chunk persistence as a result of the ending Storm.
      *
      * @param endEvent The event thrown by the plugin to this handler.
      * @see StormEndEvent
@@ -254,20 +266,21 @@ public final class StormManager implements Listener {
         //   table to generate new Storm parameters for that type.
         Storm x = endEvent.getInstance();
         UUID stormId = endEvent.getStormId();
-        // Make sure this is a valid event that was being tracked.
+        // Make sure this is a valid event that was being tracked. If the storm was spawned by command,
+        //   then verifying the UUID is not necessary because manual storms aren't tracked.
         if(this.queryCurrentStormEvent(stormId) == null && !x.isCalledByCommand()) {
             StormWatch.log(false, Level.WARNING,
-                "~ StormEndEvent captured without a valid UUID: " + stormId.toString());
+                "~ StormEndEvent captured without a valid ID: " + stormId.toString());
         }
 
-        // Scheduled a task with the configured delay to unload the Storm's chunks, only if they're not persistent.
+        // Schedule a task with the configured delay to unload the Storm's chunks, only if they're not persistent.
         if(x.isLoadsChunks() && !x.isLoadedChunksPersistent()) {
-            new BukkitRunnable() {
+            var t = new BukkitRunnable() {
                 public void run() { StormWatch.getStormChunkManager().unloadStormChunks(stormId); }
             }.runTaskLater(StormWatch.instance, endEvent.getInstance().getChunkLoadingUnloadDelay() * 20L);
         }
 
-        // If the storm type has a cooldown enabled and is "organic", get the range and create a cooldown task.
+        // If the storm type has a cooldown enabled and is "organic" (not command-spawned), get the range and create a cooldown task.
         if(x.isCooldownEnabled() && !x.isCalledByCommand()) {
             // Parse information for this ID from the registered events.
             Tuple<World, Class<? extends Storm>> worldClass = this.queryCurrentStormEvent(stormId);
@@ -278,17 +291,18 @@ public final class StormManager implements Listener {
             }
             World stormWorld = worldClass.a();
             Class<? extends Storm> stormClass = worldClass.b();
-            int cooldown = x.getInstanceCooldown(); //x.getSomeCooldown();
-            new BukkitRunnable() {
+            int cooldown = x.getInstanceCooldown();
+            var t = new BukkitRunnable() {
                 public void run() {
                     currentStormsMap.remove(stormId);
                     StormWatch.log(true, "~~~ Cooldown complete for storm with ID: " + stormId
                         + " -- Type,World: " + stormClass.getName() + "," + stormWorld);
                 }
             }.runTaskLater(StormWatch.instance, cooldown * 20L);
-            StormWatch.log(true, "~ Scheduling removal of storm ID " + stormId + " after cooldown of " + cooldown + " seconds.");
+            StormWatch.log(true,
+                    "~ Scheduling removal of storm ID " + stormId + " after cooldown of " + cooldown + " seconds.");
         } else if(!x.isCooldownEnabled() && !x.isCalledByCommand()) {
-            // Otherwise, remove the entry from the tracker right now.
+            // Otherwise, if no cooldown, remove the entry from the Storms tracker right now.
             this.currentStormsMap.remove(stormId);
             StormWatch.log(true, "~ Removed storm with ID: " + stormId + "  (no cooldown locking)");
         }
@@ -310,31 +324,32 @@ public final class StormManager implements Listener {
     @EventHandler
     // Run every time a storm TICK event is raised. Checks for a storm start event.
     public final void onStormTick(StormTickEvent e) {
-        // If no players are online, all events are invalidated (even cooldown decrements).
+        // If no players are online, all Tick events are invalidated.
         if(StormWatch.instance.getServer().getOnlinePlayers().size() < 1) { return; }
-        // Iterate through each world. A storm of ONE TYPE is allowed per-world to spawn on a single "tick" event.
+        // Iterate through each world. A storm of ONE TYPE PER EACH WORLD is allowed to spawn on a single "tick" event.
+        //   What this means is all three built-in Storm extension classes will NEVER all spawn at the same time in
+        //   one world/dimension on a single tick event.
         for(World w : StormWatch.instance.getServer().getWorlds()) {
             if(w.getPlayers().size() < 1) { continue; }   //skip the world if no players are in it
             boolean stormStartedThisIterationInWorld = false;
             // Iterate in each world's dynamic Storm objects collection.
             for(Class<? extends Storm> c : this.getRegisteredStormTypes()) {
                 // Done first so STORM objects aren't created constantly and wearing down the server.
-                //StormWatch.log("Testing against chance: " + this.mgr.getStormChance(c));
                 if((Math.random() + 0.0001) <= this.getStormChance(c)) {
-                    //StormWatch.log("Passed chance, getting to storm instantiation");
                     Storm storm;
                     try {
-                        storm = (Storm)c.cast(c.getDeclaredConstructor().newInstance());
+                        storm = c.cast(c.getDeclaredConstructor().newInstance());
                     } catch(Exception ex) {
+                        // Here just-in-case, but honestly shouldn't happen if there's no mischief about.
                         StormWatch.log(false, Level.WARNING,
                                 "~ Tried to instantiate a registered Storm Type, but failed casting.\n"
-                                + "Please make sure all classes in StormTypes.REGISTERED_STORMTYPES extend Storm properly.");
+                                + "Please make sure all registered Storm types extend Storm properly.");
                         StormWatch.log(ex);
                         continue;
                     }
                     // Make sure that a storm hasn't already started in the target world on this Tick event.
                     //   Also, make sure the storm of the given type is not on cooldown, if it has world-locking (cooldowns-per-world) enabled.
-                    // ----- IMPORTANT: All other checks are done WITHIN the storm class once a Player object is fed to it.
+                    // ----- IMPORTANT: All other checks are done WITHIN the Storm base class once a Player object is fed to it.
                     //                   This step ends up getting saved and run first-thing in startStorm to prevent the
                     //                   server instantiating a new Storm[Type] object if it's just going to fail or be on cooldown anyhow.
                     if (!stormStartedThisIterationInWorld && storm.getEnabled()
@@ -342,10 +357,13 @@ public final class StormManager implements Listener {
                         // Pick a random player inside the current target world and start the storm.
                         //   Each storm is assigned a unique identifier.
                         var rng = new Random();
-                        Player p = w.getPlayers().get(rng.nextInt(w.getPlayers().size()));   //random player selection
+                        Player p = w.getPlayers().get(  rng.nextInt( w.getPlayers().size() ))  ;   //random player selection
                         storm.startStorm(p);   //give it to the storm with the player
                         if(storm.isCancelled()) {
-                            StormWatch.log(true, "~~~ Storm ID " + storm.getStormId() + " was cancelled prematurely.");
+                            // Typically occurs if there was a failure on instantiation, but such a failure could be the intent of the
+                            //   designer of the Storm extension class (such as bad environment, or other conditions).
+                            StormWatch.log(true,
+                                    "~~~ Storm ID " + storm.getStormId() + " was cancelled prematurely.");
                         }
                         stormStartedThisIterationInWorld = !storm.isCancelled();   //as long as the storm instantiated/started, this will be true
                     }

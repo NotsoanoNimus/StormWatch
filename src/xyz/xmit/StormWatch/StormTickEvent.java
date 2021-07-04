@@ -13,8 +13,9 @@ import org.bukkit.event.HandlerList;
  */
 public class StormTickEvent extends Event  {
     private static final HandlerList handlers = new HandlerList();
-    // Constructor.
+
     public StormTickEvent() { }
+
     @Override
     public final HandlerList getHandlers() { return handlers; }
     public static HandlerList getHandlerList() { return handlers; }

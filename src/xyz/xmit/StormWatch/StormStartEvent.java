@@ -18,13 +18,13 @@ public class StormStartEvent extends Event implements Cancellable {
 
     private final World world;
     private final Storm instance;
-    // Constructor.
+
     public StormStartEvent(World w, Storm instance) {
         this.world = w; this.instance = instance;
         if(w == null || instance == null) {
             StormWatch.log(false, Level.WARNING,
                     "A storm event tried to start but received invalid parameters (world, instance)"
-                        + "; cancelling. Is the storm type set up properly and registered?");
+                        + "; cancelling.\nIs the storm type set up properly and registered?");
             this.setCancelled(true);
             return;
         }
@@ -40,8 +40,10 @@ public class StormStartEvent extends Event implements Cancellable {
                     ? "--- Cooldown: " + instance.getInstanceCooldown()
                     : "--- No cooldown enabled for this type.");
         }
-        StormWatch.log(true, "- Started storm event: " + instance.getName() + " /// ID: " + instance.getStormId());
+        StormWatch.log(true,
+                "- Started storm event: " + instance.getName() + " /// ID: " + instance.getStormId());
     }
+
     /**
      * Gets the world in which the storm is requesting to spawn.
      */
