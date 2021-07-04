@@ -1,8 +1,8 @@
 main: xyz.xmit.StormWatch.StormWatch
 name: StormWatch
 version: 0.7
-description: Scheduled weather and special events with a useable API for scheduling new task types.
-api-version: 1.16
+description: An API for scheduling, managing, and manipulating custom server-side weather events.
+api-version: 1.17
 load: POSTWORLD
 author: NotsoanoNimus <spigot-dev@xmit.xyz>
 website: xmit.xyz
@@ -10,7 +10,7 @@ commands:
   stormgr:
     description: Primary StormWatch control command. Used to enable/disable Storm types, and also call them on-demand.
     permission-message: You don't have permission to manage Storm events on this server.
-    usage: "Usage: /<command>   { start | stop | newimpact }   [ OPTIONS ]"
+    usage: "Usage: /<command>   {action}   [ OPTIONS ]"
 permissions:
   stormwatch.*:
     description: Access to all StormWatch commands.

@@ -1,6 +1,6 @@
 package xyz.xmit.StormWatch.storms;
 
-import net.minecraft.server.v1_16_R3.Tuple;
+import net.minecraft.util.Tuple;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -194,7 +194,7 @@ public final class StormImpact extends Storm implements Listener {
      */
     public final boolean isPlaysWarningSound() { return this.warningSound; }
     /**
-     * Gets whether the meteor's splash effect is composed of
+     * Gets whether the meteor's splash effect is composed of nearby material types, based on the impact biome.
      */
     public final boolean isMysterySplashNearbyTypes() { return this.mysterySplashNearbyTypes; }
     /**
@@ -305,7 +305,7 @@ public final class StormImpact extends Storm implements Listener {
         this.trackerBlock = null;
         // Forcibly set the storm duration, because this is a one-off, non-scheduled event.
         //   Give the meteor long enough to touch the ground below.
-        this.setStormDurationTicks(30 * 20); //30sec * 20ticks/sedc = 600 ticks
+        this.setStormDurationTicks(30 * 20); //30sec * 20ticks/sec = 600 ticks
 
         return true;
     }
@@ -356,7 +356,7 @@ public final class StormImpact extends Storm implements Listener {
                     // So to trim the edges of the sphere and create a radius (using example of radius=5):
                     //   t,e,h = (0,2,0) ---> r = sqrt(0^2 + 2^2 + 0^2) = 2, which is INSIDE of the radius of 5.
                     //   t,e,h = (4,4,4) ---> r = sqrt(4^2 + 4^2 + 4^2) = sqrt(48) = 6.92, which is OUTSIDE the radius of 5.
-                    int spherePoint = (int) Math.floor(Math.sqrt(Math.pow(t, 2) + Math.pow(e, 2) + Math.pow(h, 2)));
+                    int spherePoint = (int) Math.floor( Math.sqrt(Math.pow(t, 2) + Math.pow(e, 2) + Math.pow(h, 2)) );
                     if ((!this.meteorHollow && spherePoint > meteorRadius)
                             || (this.meteorHollow && spherePoint != meteorRadius)) {
                         continue;
@@ -427,7 +427,9 @@ public final class StormImpact extends Storm implements Listener {
             FallingBlock block = this.trackerBlock;
             this.trackerBlock = null;
             try {
-                float explosionYield = this.isYieldProportional() ? (float)(this.meteorDiameter * 2.8) : this.getExplosionYield();
+                float explosionYield = this.isYieldProportional()
+                        ? (float)(this.meteorDiameter * 2.8)
+                        : this.getExplosionYield();
                 if(this.getExplosionEnabled()) {
                     // Create the explosion.
                     block.getWorld().createExplosion(
@@ -519,13 +521,17 @@ public final class StormImpact extends Storm implements Listener {
 
             // If set, replace the impact tracker block with a block of diamond.
             if(this.leaveDiamondBlock) {
-                Location l = e.getBlock().getLocation(); //get the impact location
+                var l = e.getBlock().getLocation(); //get the impact location
                 l.setY(l.getY() - this.getRandomInt(2, 10)); //start 2 to 10 blocks below the impact tracker block
                 // While the next block in the loop is equal to BEDROCK or AIR types, continue searching downward until block Y-1.
                 int start = 0; int max = 400; //prevent infinite loop scenarios
-                while((l.getBlock().getBlockData().getMaterial() == Material.BEDROCK
-                        || l.getBlock().getBlockData().getMaterial() == Material.AIR)
-                        && l.getY() > 1 && start < max) { l.setY(l.getY()-1); start++; }
+                while(
+                        (l.getBlock().getBlockData().getMaterial() == Material.BEDROCK
+                            || l.getBlock().getBlockData().getMaterial() == Material.AIR)
+                        && l.getY() > 1 && start < max
+                ) {
+                    l.setY(l.getY()-1); start++;
+                }
                 if(l.getY() <= 1) {
                     this.debugLog("Failed to place a diamond block under the meteor impact zone for IMPACT.");
                 } else {

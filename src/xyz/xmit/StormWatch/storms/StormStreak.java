@@ -1,7 +1,5 @@
 package xyz.xmit.StormWatch.storms;
 
-import net.minecraft.server.v1_16_R3.Tuple;
-import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
@@ -61,7 +59,6 @@ public class StormStreak extends Storm {
     private StormConfig.RangedValue<Integer> heightAbovePlayer;
 
 
-    // Constructor.
     public StormStreak() { super(StormStreak.TYPE_NAME, StormStreak.defaultConfig); }
 
 
@@ -85,6 +82,7 @@ public class StormStreak extends Storm {
             this.streakItemType = EntityType.valueOf(
                     StormConfig.getConfigValue(this.typeName, StormStreakConfigurationKeyNames.STREAK_ENTITY_TYPE)
             );
+            // TODO: Possibly add type checking to ensure the provided item type is cast-able to type Fireball.
         } catch (Exception ex) {
             this.log(Level.WARNING, "--- Skipping spawn of STREAK storm: can't get proper configuration values.");
             this.log(ex);
@@ -103,11 +101,11 @@ public class StormStreak extends Storm {
 
     @Override
     protected final Entity getNextEntity() {
-        Location spawnBase = this.getNewRelativeLocation(true, true, true);
+        var spawnBase = this.getNewRelativeLocation(true, true, true);
         spawnBase.setYaw(this.getStormYaw());
         spawnBase.setPitch(this.getStormPitch());
         // Spawn the fireball and add it to the entities list.
-        Fireball x = (Fireball)spawnBase.getWorld().spawnEntity(spawnBase, this.streakItemType);
+        var x = (Fireball)spawnBase.getWorld().spawnEntity(spawnBase, this.streakItemType);
         x.getLocation().setYaw(this.getStormYaw());
         x.getLocation().setPitch(this.getStormPitch());
         //// These properties are immutable.

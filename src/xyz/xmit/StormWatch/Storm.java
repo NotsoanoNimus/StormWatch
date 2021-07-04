@@ -1,7 +1,7 @@
 package xyz.xmit.StormWatch;
 
 
-import net.minecraft.server.v1_16_R3.Tuple;
+import net.minecraft.util.Tuple;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;

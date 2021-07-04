@@ -1,10 +1,8 @@
 package xyz.xmit.StormWatch.storms;
 
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.*;
 import org.bukkit.event.Listener;
-import xyz.xmit.StormWatch.StormWatch;
 import xyz.xmit.StormWatch.Storm;
 
 import java.util.HashMap;
@@ -27,7 +25,6 @@ public final class StormShower extends Storm implements Listener {
     }};
 
 
-    //private final UUID instanceId = UUID.randomUUID();
     public StormShower() {
         super(StormShower.TYPE_NAME, StormShower.defaultConfig);
     }
@@ -48,9 +45,9 @@ public final class StormShower extends Storm implements Listener {
 
     @Override
     protected final Entity getNextEntity() {
-        Location spawnBase = this.getNewRelativeLocation(true, false, true);
+        var spawnBase = this.getNewRelativeLocation(true, false, true);
         // Spawn the entity.
-        Fireball x = (Fireball)spawnBase.getWorld().spawnEntity(spawnBase, EntityType.FIREBALL);
+        var x = (Fireball)spawnBase.getWorld().spawnEntity(spawnBase, EntityType.FIREBALL);
         x.getLocation().setPitch(this.getStormPitch()); x.getLocation().setYaw(this.getStormYaw());
         x.setVelocity(x.getDirection().multiply(this.getNewSpeed()));
         // A lot of the SHOWER type properties are immutable, similar to STREAK events.

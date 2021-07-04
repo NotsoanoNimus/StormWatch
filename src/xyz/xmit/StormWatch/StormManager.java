@@ -1,6 +1,6 @@
 package xyz.xmit.StormWatch;
 
-import net.minecraft.server.v1_16_R3.Tuple;
+import net.minecraft.util.Tuple;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -8,7 +8,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitRunnable;
 import xyz.xmit.StormWatch.storms.*;
 
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.logging.Level;
 

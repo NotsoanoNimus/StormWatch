@@ -1,9 +1,6 @@
 package xyz.xmit.StormWatch;
 
 import org.bukkit.*;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -63,6 +60,7 @@ public class StormWatch extends JavaPlugin {
         put(BaseConfigurationKeyNames.LOG_ON_STORM_EVENT_START.label, true);
     }};
 
+
     // MODIFIER SET TO PROTECTED, to prevent outside callers from logging and spoofing as this plugin.
     // Static logging functions.
     protected static void log(boolean isDebugOnlyMsg, Level lvl, String msg) {
@@ -83,6 +81,10 @@ public class StormWatch extends JavaPlugin {
     }
 
 
+    // Generic constructor.
+    public StormWatch() { StormWatch.instance = this; }
+
+
     /**
      * Retrieves the plugin-wide single instance of the plugin itself.
      */
@@ -99,10 +101,6 @@ public class StormWatch extends JavaPlugin {
      * Retrieves the plugin-wide single instance of the Storm Chunk Manager class.
      */
     public static StormChunkManager getStormChunkManager() { return StormWatch.getInstance().stormChunkManager; }
-
-
-        // Generic constructor.
-    public StormWatch() { StormWatch.instance = this; }
 
 
     /**
@@ -139,10 +137,10 @@ public class StormWatch extends JavaPlugin {
             this.debug = StormConfig.getConfigValue(BaseConfigurationKeyNames.DEBUG);
             if(this.debug) {
                 StormWatch.log(false,"You are running the plugin in 'debug' mode. "
-                        + "If this wasn't intended, you can turn this off via the configuration and reload the plugin.");
+                        + "If this wasn't intended, you can turn this off in the configuration and reload the plugin.");
             }
         } catch (Exception ex) {
-            StormWatch.log(false, Level.WARNING, "Couldn't get DEBUG configuration key; defaulted to enabled debug.");
+            StormWatch.log(false, Level.WARNING, "Couldn't get DEBUG configuration key; enabled debug by default.");
             this.debug = true;
         }
 
@@ -156,13 +154,20 @@ public class StormWatch extends JavaPlugin {
             @Override
             public void run() {
                 // Create and fire a custom MeteorEvent.
-                StormTickEvent c = new StormTickEvent();
+                var c = new StormTickEvent();
                 Bukkit.getPluginManager().callEvent(c);
             }
         }.runTaskTimer(this, (StormWatch.TickRate*2L), StormWatch.TickRate); //delay of TickRate*2 before starting
 
         // Register the primary control command executor.
-        this.getCommand("stormgr").setExecutor(new StormWatchCommandExecutor());
+        try {
+            Objects.requireNonNull(this.getCommand("stormgr"))
+                    .setExecutor(new StormWatchCommandExecutor());
+        } catch (Exception ex) {
+            StormWatch.log(false, Level.WARNING,
+            "Failed to register the 'stormgr' command executor. Commands will not be executable.");
+            StormWatch.log(ex);
+        }
     }
 
 
@@ -175,7 +180,7 @@ public class StormWatch extends JavaPlugin {
             // Unload all loaded configurations.
             StormWatch.defaultConfigsSetForTypes.clear();
             // Unregister all event handlers.
-            for(Listener l : this.registeredListeners) { HandlerList.unregisterAll(l); }
+            for(Listener l : this.getRegisteredListeners()) { HandlerList.unregisterAll(l); }
             // Cancel the "tick" event task.
             this.tickTimerTask.cancel();
             // Unload any ticketed chunks.

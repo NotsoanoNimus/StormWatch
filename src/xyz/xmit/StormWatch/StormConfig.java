@@ -1,6 +1,6 @@
 package xyz.xmit.StormWatch;
 
-import net.minecraft.server.v1_16_R3.Tuple;
+import net.minecraft.util.Tuple;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.*;
