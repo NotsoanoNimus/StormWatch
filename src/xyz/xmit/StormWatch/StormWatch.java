@@ -46,10 +46,13 @@ public class StormWatch extends JavaPlugin {
     private BukkitTask tickTimerTask;
     // Debug flag. Config-specified.
     private boolean debug, logOnNewStormEvent;
+    private ArrayList<String> globalExemptPlayers, globalExemptWorlds;
     // Top-level configuration variables for the plugin.
     private enum BaseConfigurationKeyNames implements StormConfig.ConfigKeySet {
         DEBUG("debug"),
-        LOG_ON_STORM_EVENT_START("logOnNewStormStart");
+        LOG_ON_STORM_EVENT_START("logOnNewStormStart"),
+        GLOBAL_EXEMPT_WORLD_NAMES("globalExemptWorldNames"),
+        GLOBAL_EXEMPT_PLAYER_NAMES("globalExemptPlayerNames");
         private final String label;
         BaseConfigurationKeyNames(String keyText) { this.label = keyText; }
         public final String getLabel() { return this.label; }
@@ -58,6 +61,8 @@ public class StormWatch extends JavaPlugin {
     private static final HashMap<String, Object> defaultConfig = new HashMap<>() {{
         put(BaseConfigurationKeyNames.DEBUG.label, false);
         put(BaseConfigurationKeyNames.LOG_ON_STORM_EVENT_START.label, true);
+        put(BaseConfigurationKeyNames.GLOBAL_EXEMPT_WORLD_NAMES.label, new ArrayList<String>());
+        put(BaseConfigurationKeyNames.GLOBAL_EXEMPT_PLAYER_NAMES.label, new ArrayList<String>());
     }};
 
 
@@ -113,6 +118,22 @@ public class StormWatch extends JavaPlugin {
      */
     public final boolean getLogOnNewStormEvent() { return this.logOnNewStormEvent; }
     /**
+     * Returns a list of player names who should be exempt from ALL Storm types.
+     */
+    public final ArrayList<String> getGlobalExemptPlayers() { return this.globalExemptPlayers; }
+    /**
+     * Checks the exempt players list for the given player name, to see if they are exempt from Storm spawning.
+     */
+    public final boolean isExemptPlayer(String playerName) { return this.globalExemptPlayers.contains(playerName); }
+    /**
+     * Returns a list of world names that are exempt from Storm spawning.
+     */
+    public final ArrayList<String> getGlobalExemptWorlds() { return this.globalExemptWorlds; }
+    /**
+     * Returns whether the given world name is exempt from spawning any Storm events from the plugin.
+     */
+    public final boolean isExemptWorld(String worldName) { return this.globalExemptWorlds.contains(worldName); }
+    /**
      * Gets all registered plugin Listener objects.
      * List of any and all Listener objects that have, or will be, registered through this plugin. This
      * is used at plugin-disable to force de-registration of Listener types that might be around still.
@@ -142,6 +163,34 @@ public class StormWatch extends JavaPlugin {
         } catch (Exception ex) {
             StormWatch.log(false, Level.WARNING, "Couldn't get DEBUG configuration key; enabled debug by default.");
             this.debug = true;
+        }
+        if(StormConfig.getConfigValueNoThrow(BaseConfigurationKeyNames.LOG_ON_STORM_EVENT_START) == null) {
+            StormWatch.log(false, "Enabling logging on new Storm events, by default.");
+            this.logOnNewStormEvent = true;
+        } else {
+            this.logOnNewStormEvent = StormConfig.getConfigValueNoThrow(BaseConfigurationKeyNames.LOG_ON_STORM_EVENT_START);
+        }
+        if((this.globalExemptWorlds = StormConfig.getConfigValueNoThrow(BaseConfigurationKeyNames.GLOBAL_EXEMPT_WORLD_NAMES)) == null) {
+            StormWatch.log(false,
+                    "Did not find a value for globally exempt world names. Defaulting to NO GLOBALLY EXEMPT WORLDS.");
+            this.globalExemptWorlds = new ArrayList<>();
+        } else {
+            StormWatch.log(false,
+                    "Storm events globally exempted for World names:   {" + String.join("; ", this.globalExemptWorlds) + "}");
+            if(this.debug) {
+                StormWatch.log(true, "+ Storm events in the GLOBAL scope are ENABLED for worlds:");
+                for(World w : this.getServer().getWorlds()) {
+                    if(!this.isExemptWorld(w.getName())) { StormWatch.log(true, "+++ " + w.getName()); }
+                }
+            }
+        }
+        if((this.globalExemptPlayers = StormConfig.getConfigValueNoThrow(BaseConfigurationKeyNames.GLOBAL_EXEMPT_PLAYER_NAMES)) == null) {
+            StormWatch.log(false,
+                    "Did not find a value for globally exempt player names. Defaulting to NO GLOBAL PLAYER EXEMPTIONS.");
+            this.globalExemptPlayers = new ArrayList<>();
+        } else {
+            StormWatch.log(false,
+                    "Storm events globally exempted for Player names:   {" + String.join("; ", this.globalExemptPlayers) + "}");
         }
 
         // Set up the Storm Manager event handler and register it.

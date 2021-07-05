@@ -39,6 +39,41 @@ public final class StormConfig {
      */
     public final FileConfiguration getConfigFile() { return this.config; }
 
+
+    /**
+     * See: {@link #getConfigValueNoThrow(String, ConfigKeySet)}
+     */
+    public static <T> T getConfigValueNoThrow(ConfigKeySet subKeyNode) {
+        return StormConfig.getConfigValueNoThrow("", subKeyNode);
+    }
+    /**
+     * Gets a configuration node's value, and includes a try-catch inside the method to capture failing queries.
+     * This is useful for returning a NULL and generating console logging for when a configuration node's access
+     * fails, and absolves the need for the calling code to wrap the config query in a try-catch statement.
+     * See: {@link #getConfigValue(String, String)}
+     */
+    public static <T> T getConfigValueNoThrow(String rootNode, ConfigKeySet subKeyNode) {
+        if(rootNode.isEmpty()) {
+            try {
+                return StormConfig.getConfigValue(subKeyNode);
+            } catch (Exception ex) {
+                StormWatch.log(false, "Failed to get configuration node: " + subKeyNode.getLabel());
+                StormWatch.log(ex);
+                return null;
+            }
+        } else {
+            try {
+                return StormConfig.getConfigValue(rootNode, subKeyNode);
+            } catch (Exception ex) {
+                StormWatch.log(false,
+                        "Failed to get configuration node: " + rootNode + "." + subKeyNode.getLabel());
+                StormWatch.log(ex);
+                return null;
+            }
+        }
+    }
+
+
     /**
      * See: {@link #getConfigValue(String, String)}
      */

@@ -140,7 +140,8 @@ public final class StormManager implements Listener {
         }
 
         // Make sure all typeName fields in each Storm type are UNIQUE!
-        // TODO: Is this actually even doing anything???
+        // TODO: Is this actually even doing anything??? Default Storm types don't need to worry
+        //  about clashing names, and the registerNewStormType method already handles name collisions.
         ArrayList<String> typeNames = new ArrayList<>();
         for(Object o : baseClasses.values()) {
             try {
@@ -330,7 +331,8 @@ public final class StormManager implements Listener {
         //   What this means is all three built-in Storm extension classes will NEVER all spawn at the same time in
         //   one world/dimension on a single tick event.
         for(World w : StormWatch.instance.getServer().getWorlds()) {
-            if(w.getPlayers().size() < 1) { continue; }   //skip the world if no players are in it
+            // Skip the world if there are no players in it, or if the world is globally exempt from Storm events.
+            if(w.getPlayers().size() < 1 || StormWatch.getInstance().isExemptWorld(w.getName())) { continue; }
             boolean stormStartedThisIterationInWorld = false;
             // Iterate in each world's dynamic Storm objects collection.
             for(Class<? extends Storm> c : this.getRegisteredStormTypes()) {
@@ -357,8 +359,21 @@ public final class StormManager implements Listener {
                         // Pick a random player inside the current target world and start the storm.
                         //   Each storm is assigned a unique identifier.
                         var rng = new Random();
-                        Player p = w.getPlayers().get(  rng.nextInt( w.getPlayers().size() ))  ;   //random player selection
-                        storm.startStorm(p);   //give it to the storm with the player
+                        // Try 3 times to get a non-exempt target player for the Storm event. Failure to do so skips the event entirely.
+                        int triesToGetNonExemptPlayer = 0;
+                        Player selectedPlayer = null;
+                        while(triesToGetNonExemptPlayer < 3) {
+                            selectedPlayer = w.getPlayers().get(  rng.nextInt( w.getPlayers().size() ));
+                            if(!StormWatch.getInstance().isExemptPlayer(selectedPlayer.getName())) { break; }
+                            triesToGetNonExemptPlayer++;
+                        }
+                        if(triesToGetNonExemptPlayer >= 3) {
+                            StormWatch.log(true,
+                                    "~~~ Failed to find a non-globally-exempt target for Storm ID " + storm.getStormId());
+                            continue;
+                        }
+                        // Start the Storm with the target Player.
+                        storm.startStorm(selectedPlayer);
                         if(storm.isCancelled()) {
                             // Typically occurs if there was a failure on instantiation, but such a failure could be the intent of the
                             //   designer of the Storm extension class (such as bad environment, or other conditions).
