@@ -286,14 +286,14 @@ public abstract class Storm implements StormManager.StormCallback {
             this.typeName = ""; this.stormId = null;
             this.setCancelled(true); return;
         }
+        // Set the canonicalized typename.
         this.typeName = name.toLowerCase(Locale.ROOT);
         // Assign the storm a valid UUID.
         this.stormId = UUID.randomUUID();
-        if(!this.getEnabled()) {
-            this.log(Level.WARNING, "Storm type [" + name + "] is config-disabled.");
-            this.setCancelled(true); return;
-        }
 
+        // Populate any default configuration variables that aren't already defined.
+        //   This needs to be done BEFORE checking if the Storm type is enabled, otherwise first-run instantiations will
+        //   always return a FALSE for the Storm type being ENABLED.
         this.baseDefaultConfiguration.putAll(defaultConfig);   //add the per-subclass object defaults to the super's default
         // ^^ This can overwrite keys that already exist as well as define custom ones for the calling object.
         if(!StormWatch.defaultConfigsSetForTypes.contains(this.getClass())) {
@@ -313,6 +313,12 @@ public abstract class Storm implements StormManager.StormCallback {
                 this.setCancelled(true);
                 return;
             }
+        }
+
+        // Verify whether the Storm type is config-enabled.
+        if(!this.getEnabled()) {
+            this.log(Level.WARNING, "Storm type [" + name + "] is config-disabled.");
+            this.setCancelled(true); return;
         }
 
         // Set base config stuff (required to be set for ALL storm types).
