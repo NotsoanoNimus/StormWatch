@@ -350,11 +350,12 @@ public final class StormManager implements Listener {
                         continue;
                     }
                     // Make sure that a storm hasn't already started in the target world on this Tick event.
+                    //   Ensure that the world name is not exempted from this particular Storm type.
                     //   Also, make sure the storm of the given type is not on cooldown, if it has world-locking (cooldowns-per-world) enabled.
                     // ----- IMPORTANT: All other checks are done WITHIN the Storm base class once a Player object is fed to it.
                     //                   This step ends up getting saved and run first-thing in startStorm to prevent the
                     //                   server instantiating a new Storm[Type] object if it's just going to fail or be on cooldown anyhow.
-                    if (!stormStartedThisIterationInWorld && storm.getEnabled()
+                    if (!stormStartedThisIterationInWorld && storm.getEnabled() && !storm.isWorldNameExempt(w.getName())
                             && !(storm.isCooldownEnabled() && this.checkStormTypeAlreadyInProgress(storm.getClass(), w))) {
                         // Pick a random player inside the current target world and start the storm.
                         //   Each storm is assigned a unique identifier.
@@ -364,7 +365,10 @@ public final class StormManager implements Listener {
                         Player selectedPlayer = null;
                         while(triesToGetNonExemptPlayer < 3) {
                             selectedPlayer = w.getPlayers().get(  rng.nextInt( w.getPlayers().size() ));
-                            if(!StormWatch.getInstance().isExemptPlayer(selectedPlayer.getName())) { break; }
+                            if(!StormWatch.getInstance().isExemptPlayer(selectedPlayer.getName())
+                                    && !storm.isPlayerNameExempt(selectedPlayer.getName())) {
+                                break;   // Break out and proceed so long as the player is not exempt in either scope
+                            }
                             triesToGetNonExemptPlayer++;
                         }
                         if(triesToGetNonExemptPlayer >= 3) {

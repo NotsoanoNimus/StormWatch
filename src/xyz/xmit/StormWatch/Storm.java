@@ -61,7 +61,9 @@ public abstract class Storm implements StormManager.StormCallback {
         LOAD_CHUNKS("chunkLoading.enabled"),
         LOAD_CHUNKS_DIAMETER("chunkLoading.chunksRadius"),
         LOAD_CHUNKS_PERSISTENT("chunkLoading.persistent"),
-        LOAD_CHUNKS_UNLOAD_DELAY("chunkLoading.unloadDelaySeconds");
+        LOAD_CHUNKS_UNLOAD_DELAY("chunkLoading.unloadDelaySeconds"),
+        EXEMPT_PLAYERS("exemptPlayers"),
+        EXEMPT_WORLDS("exemptWorlds");
         public final String label;
         RequiredConfigurationKeyNames(String keyText) { this.label = keyText; }
         public final String getLabel() { return this.label; }
@@ -209,6 +211,8 @@ public abstract class Storm implements StormManager.StormCallback {
         put(RequiredConfigurationKeyNames.LOAD_CHUNKS_DIAMETER.label, 5);
         put(RequiredConfigurationKeyNames.LOAD_CHUNKS_PERSISTENT.label, false);
         put(RequiredConfigurationKeyNames.LOAD_CHUNKS_UNLOAD_DELAY.label, 0);
+        put(RequiredConfigurationKeyNames.EXEMPT_PLAYERS.label, new ArrayList<String>());
+        put(RequiredConfigurationKeyNames.EXEMPT_WORLDS.label, new ArrayList<String>());
     }};
     /**
      * Default explosive-entity configuration that's provided, but not required, should any extension
@@ -277,6 +281,7 @@ public abstract class Storm implements StormManager.StormCallback {
     private int stormDurationEndPaddingTicks = 0;
     private int chunkLoadingDiameter; //how many chunks the Storm loads from end-to-end of a square area
     private int chunkLoadingUnloadDelay; //delay in seconds to wait after the StormEndEvent finishes to unload the Storm's chunks
+    private ArrayList<String> exemptPlayers, exemptWorlds; // exempt worlds and target players for the Storm
 
 
     // Default constructor requires an immutable name field and a configuration object.
@@ -378,6 +383,9 @@ public abstract class Storm implements StormManager.StormCallback {
         this.chunkLoadingUnloadDelay = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.LOAD_CHUNKS_UNLOAD_DELAY);
         this.isLoadedChunksPersistent = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.LOAD_CHUNKS_PERSISTENT);
         this.isLoadsChunks = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.LOAD_CHUNKS);
+        //// exemption settings
+        this.exemptPlayers = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.EXEMPT_PLAYERS);
+        this.exemptWorlds = StormConfig.getConfigValue(this.typeName, RequiredConfigurationKeyNames.EXEMPT_WORLDS);
         //// preset storm duration (changeable by sub-classes before scheduling)
         ////   NOTE: The storm duration is in SERVER TICKS
         this.stormDurationTicks = this.getNewDurationInTicks();
@@ -417,6 +425,10 @@ public abstract class Storm implements StormManager.StormCallback {
     public final int getChunkLoadingUnloadDelay() { return this.chunkLoadingUnloadDelay; }
     public final boolean isLoadsChunks() { return this.isLoadsChunks; }
     public final boolean isLoadedChunksPersistent() { return this.isLoadedChunksPersistent; }
+    public final ArrayList<String> getExemptPlayers() { return this.exemptPlayers; }
+    public final boolean isPlayerNameExempt(String playerName) { return this.exemptPlayers.contains(playerName); }
+    public final ArrayList<String> getExemptWorlds() { return this.exemptWorlds; }
+    public final boolean isWorldNameExempt(String worldName) { return this.exemptPlayers.contains(worldName); }
     /**
      * Gets a new location from configuration-defined coordinate ranges. The returned location can either consider the
      * configuration ranges to be absolute (i.e. in-game coordinates) between which a storm event can spawn, or a

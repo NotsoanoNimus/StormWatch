@@ -81,7 +81,7 @@ public class MySuperStorm extends Storm {
 
 # TODO
 - [X] Add a string array to default Storm options, to exempt Storms from targeting worlds and/or players by name.
-  - [ ] Also add default options to the base Storm class for the same exemptions on a Storm-by-Storm level.
+  - [X] Also add default options to the base Storm class for the same exemptions on a Storm-by-Storm level.
 - [X] Chunk management and configuration on a per-storm basis.
 - [ ] Command interface to enable/disable Storm types until the next reload: `/stormgr enable impact`
   - [ ] Commands for casting certain storms at target players. Thinking something like: `/stormgr cast impact SomePlayerName`
