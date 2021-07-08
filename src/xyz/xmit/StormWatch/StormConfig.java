@@ -135,6 +135,31 @@ public final class StormConfig {
 
 
     /**
+     * Allows a value to be set directly for a configuration node.
+     * @param rootKey The Storm type-name (or other root node) to access.
+     * @param subNodeKey The configuration sub-node of the root node.
+     * @param value The value to try setting.
+     * @return Whether or not the configuration node was set.
+     */
+    protected final boolean setConfigValue(String rootKey, ConfigKeySet subNodeKey, Object value) {
+        String targetNode = rootKey.isEmpty() ? subNodeKey.getLabel() : (rootKey + "." + subNodeKey.getLabel());
+        try {
+            StormWatch.log(true,
+                    "Attempting to set config node '" + targetNode + "' ==> '" + value.toString() + "'");
+            this.config.set(targetNode, value);
+        } catch(Exception ex) {
+            StormWatch.log(false, Level.WARNING,
+                    "Failed to set configuration node '" + targetNode + "' to value '" + value.toString() + "'");
+            StormWatch.log(ex);
+            return false;
+        }
+        StormWatch.instance.saveConfig();
+        this.reloadConfig();
+        return true;
+    }
+
+
+    /**
      * From notes, I believe this was my attempt at dissolving issues with Integer vs Double confusions,
      * as well as easily abstracting all operations for extracting details from an input range.
      * <em><u>Not implemented at this time.</u></em> Please ignore.

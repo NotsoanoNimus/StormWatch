@@ -86,6 +86,8 @@ public class MySuperStorm extends Storm {
 - [ ] Command interface to enable/disable Storm types until the next reload: `/stormgr enable impact`
   - [ ] Commands for casting certain storms at target players. Thinking something like: `/stormgr cast impact SomePlayerName`
   - [ ] Should also add an option for any Storm types to have their own extra command parsing for `cast` calls; consider:
+- [ ] Storm data collector/statistics class.
+- [ ] Command to query information about StormWatch and Storm data.
 ```
 /stormgr cast impact SomePlayerName [opt1 opt2 ... optN]
 --- Create an Impact event, instantiated for SomePlayerName

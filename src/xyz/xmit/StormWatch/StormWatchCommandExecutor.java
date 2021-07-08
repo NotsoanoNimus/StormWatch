@@ -20,15 +20,6 @@ public class StormWatchCommandExecutor implements CommandExecutor {
     private CommandSender whoSent = null;
 
 
-    // Generic constructor.
-    public StormWatchCommandExecutor() { }
-
-
-    private String[] shiftStringArray(String[] params) {
-        String[] x = Arrays.copyOfRange(params, 1, params.length - 1);
-        return x;
-    }
-
     private void refreshStormTypes() {
         // Get a to-date (refreshed) list of all Storm type names.
         //   This is a map of the sub-type's TYPE_NAME --> Class-Name
@@ -68,27 +59,27 @@ public class StormWatchCommandExecutor implements CommandExecutor {
             return false;
         }
 
+        // Validate that the selected storm type is valid, and instantiate a Storm object corresponding to it.
         Class<? extends Storm> chosenStorm;
         Storm newStorm;
         try {
             chosenStorm = (Class<? extends Storm>)Class.forName(  this.typesToClassPaths.get( args[1] )  );
             if(!StormWatch.getStormManager().getRegisteredStormTypes().contains(chosenStorm)) {
-                throw new Exception("Not an enabled Storm type!");
+                throw new Exception(chosenStorm.toString() + ", is not a registered Storm type!");
             }
             newStorm = (Storm)chosenStorm.cast(chosenStorm.getDeclaredConstructor().newInstance());
             newStorm.setIsCalledByCommand();
         } catch (Exception ex) {
-            ((Player)sender).sendMessage("That is not a currently-registered Storm type.");
+            sender.sendMessage("That is not a currently-registered Storm type.");
             StormWatch.log(ex);
             return false;
         }
 
         switch(args[0].toLowerCase(Locale.ROOT)) {
             case "cast":
-                return this.castCommand(chosenStorm, newStorm,
-                        this.shiftStringArray(this.shiftStringArray(args)));
+                return this.castCommand(newStorm, args[2], Arrays.copyOfRange(args, 3, args.length - 1));
             case "toggle":
-                return this.toggleStorm(chosenStorm, args[2]);
+                return this.toggleStorm(chosenStorm, args[1], args[2]);
             default:
                 sender.sendMessage("Invalid parameter: " + args[0]);
                 return false;
@@ -96,15 +87,14 @@ public class StormWatchCommandExecutor implements CommandExecutor {
     }
 
 
-    private boolean castCommand(Class<? extends Storm> storm, Storm s, String[] castParams) {
-        String tgtPlayer = castParams[0];
+    private boolean castCommand(Storm s, String targetPlayerName, String[] castParams) {
         Player target;
         try {
-            target = StormWatch.getInstance().getServer().getPlayer(tgtPlayer);
+            target = StormWatch.getInstance().getServer().getPlayer(targetPlayerName);
             if(target == null) { throw new Exception("Target player does not exist."); }
         } catch (Exception ex) {
             StormWatch.log(ex);
-            this.whoSent.sendMessage("The target player '" + tgtPlayer + "' could not be found.");
+            this.whoSent.sendMessage("The target player '" + targetPlayerName + "' could not be found.");
             return false;
         }
         // After getting the valid target player: give the Storm the params array and start it.
@@ -114,30 +104,45 @@ public class StormWatchCommandExecutor implements CommandExecutor {
         return true;
     }
 
-    private boolean toggleStorm(Class<? extends Storm> storm, String enOrDisable) {
+    private boolean toggleStorm(Class<? extends Storm> storm, String stormName, String enOrDisable) {
         var mgr = StormWatch.getStormManager();
-        switch(enOrDisable) {
-            case "enable":
+        switch (enOrDisable.toLowerCase(Locale.ROOT)) {
+            case "enable" -> {
+                // First, make sure the Storm type is registered.
                 if(!mgr.getRegisteredStormTypes().contains(storm)) {
-                    mgr.registerNewStormType(storm);
-                    this.whoSent.sendMessage("Attempted to load and enabled Storm type: " + storm.getName());
-                } else {
-                    this.whoSent.sendMessage("That Storm type is already enabled!");
+                    this.whoSent.sendMessage("Attempting to register Storm type: " + storm.getName());
+                    if(!mgr.registerNewStormType(storm)) {
+                        this.whoSent.sendMessage("Failed to register the requested Storm type.");
+                        return false;
+                    }
                 }
-                return true;
-            case "disable":
+                // Now, config-enable the storm.
+                return StormWatch.getStormConfig().setConfigValue(
+                        stormName,
+                        Storm.RequiredConfigurationKeyNames.ENABLED,
+                        true
+                );
+            }
+            case "disable" -> {
                 if(mgr.getRegisteredStormTypes().contains(storm)) {
-                    mgr.unregisterStormType(storm);
-                    this.whoSent.sendMessage("Un-registered and disabled Storm type: " + storm.getName());
-                } else {
-                    this.whoSent.sendMessage("That Storm type is already disabled!");
+                    this.whoSent.sendMessage("Attempting to unregister Storm type: " + storm.getName());
+                    if(!mgr.unregisterStormType(storm)) {
+                        this.whoSent.sendMessage("Failed to unregister that Storm type!");
+                        return false;
+                    }
                 }
-                return true;
-            default:
-                break;
+                // Now, config-disable the storm.
+                return StormWatch.getStormConfig().setConfigValue(
+                        stormName,
+                        Storm.RequiredConfigurationKeyNames.ENABLED,
+                        false
+                );
+            }
+            default -> {
+                this.whoSent.sendMessage("The provided parameter '" + enOrDisable
+                        + "' is invalid. Must be 'enable' or 'disable'.");
+                return false;
+            }
         }
-        this.whoSent.sendMessage("The provided parameter '" + enOrDisable
-            + "' is invalid. Must be 'enable' or 'disable'.");
-        return false;
     }
 }
