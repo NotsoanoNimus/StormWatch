@@ -45,7 +45,7 @@ public class StormStreak extends Storm {
             put(RequiredConfigurationKeyNames.WINDY.label, true);
             put(RequiredConfigurationKeyNames.X_RANGE.label, new int[]{-120, 120});
             put(RequiredConfigurationKeyNames.Z_RANGE.label, new int[]{-120, 120});
-            put(RequiredConfigurationKeyNames.HEIGHT_RANGE.label, new int[]{0, 1}); // These always spawn within a certain distance of the player.
+            put(RequiredConfigurationKeyNames.HEIGHT_RANGE.label, new int[]{50, 70}); // These always spawn within a certain distance of the player height.
             put(RequiredConfigurationKeyNames.PITCH_RANGE.label, new int[]{-20, 5}); // Near-horizontal angle of incidence on all meteors.
 
             // STREAK-specific configuration.
