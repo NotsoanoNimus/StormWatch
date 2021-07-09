@@ -137,21 +137,6 @@ public final class StormManager implements Listener {
                 StormWatch.log(e);
             }
         }
-
-        // Make sure all typeName fields in each Storm type are UNIQUE!
-        // TODO: Is this actually even doing anything??? Default Storm types don't need to worry
-        //  about clashing names, and the registerNewStormType method already handles name collisions.
-        ArrayList<String> typeNames = new ArrayList<>();
-        for(Object o : baseClasses.values()) {
-            try {
-                String objName = ((Storm)o).getName();
-                if (typeNames.contains(objName)) {
-                    throw new Exception("Storm typeName '" + objName + "' is already defined!");
-                } else { typeNames.add(objName); }
-            } catch (Exception ex) {
-                StormWatch.log(ex);
-            }
-        }
     }
 
 
@@ -202,10 +187,7 @@ public final class StormManager implements Listener {
      */
     @SuppressWarnings("unused")
     public final boolean unregisterStormType(Class<? extends Storm> stormType) {
-        // Need to clone the registered types arraylist to allow removal while iterating.
-        //   TODO: Though since it's not iterating anymore, this can probably be changed..
-        ArrayList<Class<? extends  Storm>> listOfStormTypes = new ArrayList<>(this.registeredStormTypes);
-        if(listOfStormTypes.contains(stormType)) {
+        if(this.registeredStormTypes.contains(stormType)) {
             try {
                 if (!Arrays.asList(StormManager.REGISTERED_STORMTYPES).contains(stormType)) {
                     this.registeredStormTypes.remove(stormType);
@@ -223,22 +205,6 @@ public final class StormManager implements Listener {
                 StormWatch.log(ex);
             }
         }
-        // Use the temporary clone to avoid a ConcurrentModificationException
-        /*
-        for(Class<? extends Storm> c : listOfStormTypes) {
-            try {
-                if(c.equals(stormType)) {   // type was found
-                    if(!Arrays.asList(StormManager.REGISTERED_STORMTYPES).contains(stormType)) {
-                        this.registeredStormTypes.remove(c);
-                        StormWatch.log(false,
-                            "~ STORM EXTENSION DISABLED BY DE-REGISTRATION: " + c.getName());
-                    } else { return false; }   // you cannot toggle/de-register a built-in Storm type
-                }
-            } catch (Exception ex) {
-                StormWatch.log(false, "~ Failed to unregister storm type: " + stormType);
-                StormWatch.log(ex);
-            }
-        }*/
         return false;
     }
 

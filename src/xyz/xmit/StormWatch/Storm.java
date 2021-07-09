@@ -221,12 +221,12 @@ public abstract class Storm implements StormManager.StormCallback {
      * @see ExplosiveConfigurationKeyNames
      */
     protected static final HashMap<String, Object> defaultExplosiveConfiguration = new HashMap<>() {{
-        put(ExplosiveConfigurationKeyNames.EXPLODES.label, true);
-        put(ExplosiveConfigurationKeyNames.EXPLOSION_YIELD.label, 4);
-        put(ExplosiveConfigurationKeyNames.BREAKS_BLOCKS.label, true);
-        put(ExplosiveConfigurationKeyNames.INCENDIARY.label, true);
-        put(ExplosiveConfigurationKeyNames.EXPLOSION_DAMAGE.label, 4.0);
-        put(ExplosiveConfigurationKeyNames.EXPLOSION_DAMAGE_RADIUS.label, 5);
+        put(ExplosiveConfigurationKeyNames.EXPLODES.label, false);
+        put(ExplosiveConfigurationKeyNames.EXPLOSION_YIELD.label, 0);
+        put(ExplosiveConfigurationKeyNames.BREAKS_BLOCKS.label, false);
+        put(ExplosiveConfigurationKeyNames.INCENDIARY.label, false);
+        put(ExplosiveConfigurationKeyNames.EXPLOSION_DAMAGE.label, 0.0);
+        put(ExplosiveConfigurationKeyNames.EXPLOSION_DAMAGE_RADIUS.label, 0);
     }};
 
     /**

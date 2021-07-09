@@ -55,8 +55,6 @@ public class StormStreak extends Storm {
 
 
     private EntityType streakItemType; //type of entity spawned for the streak schedule
-    ////private Tuple<Integer, Integer> heightAbovePlayerRange; //height above player's head at which objects/entities can spawn
-    private StormConfig.RangedValue<Integer> heightAbovePlayer;
 
 
     public StormStreak() { super(StormStreak.TYPE_NAME, StormStreak.defaultConfig); }
@@ -67,27 +65,24 @@ public class StormStreak extends Storm {
      * Gets the configuration-set EntityType of the streak Entity spawns.
      */
     public final EntityType getStreakItemType() { return this.streakItemType; }
-    /**
-     * Gets the range of blocks above the player's head at which streak objects can spawn.
-     */
-    //public final Tuple<Integer, Integer> getHeightAbovePlayerRange() { return this.heightAbovePlayerRange; }
 
 
     @Override
     protected final boolean initializeStormTypeProperties() {
+        Fireball testCast;
         try {
-            this.heightAbovePlayer = new StormConfig.RangedValue<>(this.typeName, StormStreakConfigurationKeyNames.HEIGHT_ABOVE_PLAYER_RANGE);
-            //this.heightAbovePlayerRange =
-            //        StormConfig.getIntegerRange(this.typeName, StormStreakConfigurationKeyNames.HEIGHT_ABOVE_PLAYER_RANGE);
             this.streakItemType = EntityType.valueOf(
                     StormConfig.getConfigValue(this.typeName, StormStreakConfigurationKeyNames.STREAK_ENTITY_TYPE)
             );
-            // TODO: Possibly add type checking to ensure the provided item type is cast-able to type Fireball.
+            var randomSpawnLocation = this.getNewRelativeLocation(true, true, true);
+            testCast = (Fireball)randomSpawnLocation.getWorld().spawnEntity(randomSpawnLocation, this.streakItemType);
         } catch (Exception ex) {
             this.log(Level.WARNING, "--- Skipping spawn of STREAK storm: can't get proper configuration values.");
             this.log(ex);
             return false;
         }
+        // Hopefully remove the entity if it was spawned.
+        try { testCast.remove(); } catch(Exception ex) { this.log(ex); }
         return true;
     }
 
