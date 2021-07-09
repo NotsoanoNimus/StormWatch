@@ -126,10 +126,9 @@ public final class StormManager implements Listener {
                     if(!stormObj.getEnabled()) {
                         StormWatch.log(false,
                                 "~~~ Type is disabled in the configuration.");
-                    }
-                    if(stormObj.isCancelled()) {
+                    } else if(stormObj.isCancelled()) {
                         StormWatch.log(false,
-                                "~~~ The type was CANCELLED. This likely indicates a configuration problem.");
+                                "~~~ The type was marked enabled, but was CANCELLED. This likely indicates a configuration problem.");
                     }
                 }
             } catch (Exception e) {
@@ -203,23 +202,44 @@ public final class StormManager implements Listener {
      */
     @SuppressWarnings("unused")
     public final boolean unregisterStormType(Class<? extends Storm> stormType) {
+        // Need to clone the registered types arraylist to allow removal while iterating.
+        //   TODO: Though since it's not iterating anymore, this can probably be changed..
         ArrayList<Class<? extends  Storm>> listOfStormTypes = new ArrayList<>(this.registeredStormTypes);
+        if(listOfStormTypes.contains(stormType)) {
+            try {
+                if (!Arrays.asList(StormManager.REGISTERED_STORMTYPES).contains(stormType)) {
+                    this.registeredStormTypes.remove(stormType);
+                    StormWatch.log(false,
+                            "~ Storm extension temporary disabled by un-registration until the next reload: " + stormType.getName());
+                    return true;
+                } else {
+                    // One cannot toggle/unregister a built-in Storm type
+                    StormWatch.log(false,
+                            "~ Built-in Storm types cannot be unregistered from the plugin. They should be config-disabled instead.");
+                    return false;
+                }
+            } catch (Exception ex) {
+                StormWatch.log(false, "~ Failed to unregister Storm type: " + stormType.getName());
+                StormWatch.log(ex);
+            }
+        }
         // Use the temporary clone to avoid a ConcurrentModificationException
+        /*
         for(Class<? extends Storm> c : listOfStormTypes) {
             try {
-                if (c.equals(stormType)) {
+                if(c.equals(stormType)) {   // type was found
                     if(!Arrays.asList(StormManager.REGISTERED_STORMTYPES).contains(stormType)) {
                         this.registeredStormTypes.remove(c);
                         StormWatch.log(false,
                             "~ STORM EXTENSION DISABLED BY DE-REGISTRATION: " + c.getName());
-                    }
+                    } else { return false; }   // you cannot toggle/de-register a built-in Storm type
                 }
             } catch (Exception ex) {
                 StormWatch.log(false, "~ Failed to unregister storm type: " + stormType);
                 StormWatch.log(ex);
             }
-        }
-        return true;
+        }*/
+        return false;
     }
 
 
