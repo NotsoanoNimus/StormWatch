@@ -26,6 +26,11 @@ As another reminder, more documentation about using the API _and_ the configurat
 
 See my [independent test plugin](https://github.com/NotsoanoNimus/Darude-Sandstorm-Test) for an example of how you can create your own managed Storm events!
 
+Add StormWatch to your `plugin.yml` dependencies section:
+```yml
+depend: [StormWatch, (others)...]
+```
+
 Registering your Storm extension class:
 ```java
 import xyz.xmit.StormWatch.StormWatch;
@@ -33,13 +38,10 @@ public class MyCustomStormPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         try {
-            // Make sure the StormWatch dependency is there, manually.
-            if(this.getServer().getPluginManager().getPlugin("StormWatch") != null) {
-                // Register your custom Storm type with the API/manager plugin.
-                if(!StormWatch.getStormManager().registerNewStormType(MySuperStorm.class)) {
-                    throw new Exception("Failed to register the custom Storm type.");  
-                }
-            } else { throw new Exception("Could not find the StormWatch plugin."); }
+            // Register your custom Storm type with the API/manager plugin.
+            if(!StormWatch.getStormManager().registerNewStormType(MySuperStorm.class)) {
+                throw new Exception("Failed to register the custom Storm type.");  
+            } else { this.getLogger().log("Registered with StormWatch!"); }
         } catch (Exception ex) {
             this.getLogger().log(Level.ERROR,
                     "Failed to register plugin in StormWatch: " + ex.getMessage());
@@ -80,6 +82,7 @@ public class MySuperStorm extends Storm {
 ```
 
 # TODO
+Aside from completing all marked code TODOs, here are some future plans moving forward:
 - [X] Add a string array to default Storm options, to exempt Storms from targeting worlds and/or players by name.
   - [X] Also add default options to the base Storm class for the same exemptions on a Storm-by-Storm level.
 - [X] Chunk management and configuration on a per-storm basis.
@@ -100,3 +103,7 @@ So the full command becomes...
 
 All Storm types can have this extensibility built in.
 ```
+- [ ] Storm data collector/statistics class.
+- [ ] (_PARTIALLY DONE_) Command to query information about StormWatch and Storm data.
+- [ ] Create more custom Storm plugins, or built-in types.
+- [ ] Consider deprecating the distinctions for _built-in types_ being completely immutable in the StormManager.
