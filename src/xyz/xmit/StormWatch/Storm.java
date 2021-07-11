@@ -548,9 +548,10 @@ public abstract class Storm implements StormManager.StormCallback {
     protected final void setStormDurationTicks(int ticks) { this.stormDurationTicks = ticks; }
     protected final void setStormDurationEndPaddingTicks(int padding) { this.stormDurationEndPaddingTicks = padding; }
     protected final void setStrictConditionChecks(boolean isStrict) { this.strictConditionChecks = isStrict; }
-    protected final void setCommandParameters(String[] cmdArgs) {
-        this.commandParams = cmdArgs;
-    }
+    protected final void setCommandParameters(String[] cmdArgs) { this.commandParams = cmdArgs; }
+    // TODO: Add more "internal" property setter methods that Storm extensions can adjust freely.
+    protected final void setXRange(Tuple<Integer, Integer> newRange) { this.xRange = newRange; }
+    protected final void setZRange(Tuple<Integer, Integer> newRange) { this.zRange = newRange; }
     /////
     // Explosive SET/modify methods.
 

@@ -10,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.util.Vector;
 import xyz.xmit.StormWatch.*;
 
 import java.util.*;
@@ -23,6 +24,7 @@ import java.util.logging.Level;
  * @see Storm
  * @see Listener
  */
+// TODO: Change all names from "mystery" to "splash" fully. "Mystery" was an old concept/name that just stuck around.
 public final class StormImpact extends Storm implements Listener {
     /**
      * The storm type's registered name.
@@ -318,7 +320,32 @@ public final class StormImpact extends Storm implements Listener {
     }
 
     @Override
-    protected void setPropertiesFromCommand() { }
+    protected final void setPropertiesFromCommand() {
+        if(this.getCommandParameters() == null || this.getCommandParameters().length == 0) {
+            this.debugLog("+++++ Received no additional command parameters. Nothing extra to do.");
+            return;
+        }
+        var cmdArgs = new ArrayList<String>();
+        this.debugLog("+++ Setting properties from Impact cast command.");
+        // Converts all given params to lower-case.
+        for(String s : this.getCommandParameters()) { cmdArgs.add(s.toLowerCase(Locale.ROOT)); }
+        this.debugLog("+++++ Received command parameters:   " + String.join(", ", cmdArgs));
+        // Add actions/options to the storm now based on what values were given in the params.
+        // Do not use else-if, as each of these conditions should be checked independently.
+        if(cmdArgs.contains("direct")) {
+            this.debugLog("+++ Attempting to force a direct Impact.");
+            // Set the impact meteor directly above the player's head, and cancel out any horizontal impulses.
+            this.setXRange(new Tuple<>(-1,1));
+            this.setZRange(new Tuple<>(-1,1));
+            this.meteorSpeed = 0.1;
+        }
+        if(cmdArgs.contains("harmless")) {
+            this.debugLog("+++ Disabling any possible explosive damage or properties of the Impact.");
+            // TODO: For a command to change explosive properties, the explosion GET methods must return a
+            //       private variable value from super -- NOT the config value
+            //       This will involve rethinking how explosive properties are set on class instantiation.
+        }
+    }
 
     @Override
     protected final void doJustBeforeScheduling() {
@@ -372,6 +399,10 @@ public final class StormImpact extends Storm implements Listener {
 
         // Map out the materials to be used in the meteor. If the composition isn't varied, it can be set outside the loop easily.
         Material spawnType = this.meteorCompositionMaterials.get( this.getRandomInt(0, this.meteorCompositionMaterials.size()) );
+        // Get a randomized downward speed for the meteor.
+        // TODO: See if this should be configurable or static -- it might not be something that really needs to change.
+        //   But since everything else with the meteor is so customizable, this won't hurt to allow configuration for...
+        double downwardSpeed = -this.getRandomDouble(1.7, 5.0);
         // Spawn the meteor now.
         for(Location loc : spawnLocations) {
             if(this.meteorCompositionMixed) {
@@ -383,6 +414,8 @@ public final class StormImpact extends Storm implements Listener {
             //   blocks to sort of rain down in a stream rather than as a complete unit.
             FallingBlock block = this.getTargetPlayer().getWorld().spawnFallingBlock( loc, spawnType.createBlockData() );
             block.setVelocity(loc.getDirection().multiply(this.meteorSpeed));
+            // Give the y-direction a random pace of downward speed.
+            block.setVelocity(new Vector(block.getVelocity().getX(), downwardSpeed, block.getVelocity().getZ()));
             // Keeping this for fun. :)
             ////this.setEntityVelocity( block, this.getRandomDouble(this.speedRange) );
             block.setGravity(true); block.setPersistent(true); block.setInvulnerable(true);
