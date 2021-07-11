@@ -17,6 +17,7 @@ import java.util.*;
  * @see StormWatch
  */
 // TODO: Rename to Parser instead of Executor, since it's doing multiple cmd-related tasks.
+// TODO: Add storm cancel command by using: /stormgr cancel [world]-[type]-[player] -- uses info from StormManager.currentStormsMap
 public class StormWatchCommandExecutor implements CommandExecutor, TabCompleter {
     private final HashMap<String, String> typesToClassPaths = new HashMap<>();
     private CommandSender whoSent = null;
@@ -164,8 +165,13 @@ public class StormWatchCommandExecutor implements CommandExecutor, TabCompleter 
         s.setCommandParameters(castParams);
         if(!s.isCancelled()) {
             s.startStorm(target);
-            this.whoSent.sendMessage(ChatColor.GREEN + "Dispatched '" + s.getTypeName() +
-                    "' Storm to player '" + targetPlayerName + "'.");
+            if(s.isCancelled()) {   //storms can be cancelled after starting too, check again
+                this.whoSent.sendMessage(ChatColor.RED +
+                        "Failed to cast the Storm, as the event was cancelled. Please check the server's logs.");
+            } else {
+                this.whoSent.sendMessage(ChatColor.GREEN + "Dispatched '" + s.getTypeName() +
+                        "' Storm to player '" + targetPlayerName + "'.");
+            }
         } else {
             this.whoSent.sendMessage(ChatColor.RED + "The Storm event you tried to cast has been prematurely cancelled.");
         }
