@@ -86,11 +86,9 @@ Aside from completing all marked code TODOs, here are some future plans moving f
 - [X] Add a string array to default Storm options, to exempt Storms from targeting worlds and/or players by name.
   - [X] Also add default options to the base Storm class for the same exemptions on a Storm-by-Storm level.
 - [X] Chunk management and configuration on a per-storm basis.
-- [ ] Command interface to enable/disable Storm types until the next reload: `/stormgr enable impact`
-  - [ ] Commands for casting certain storms at target players. Thinking something like: `/stormgr cast impact SomePlayerName`
-  - [ ] Should also add an option for any Storm types to have their own extra command parsing for `cast` calls; consider:
-- [ ] Storm data collector/statistics class.
-- [ ] Command to query information about StormWatch and Storm data.
+- [X] Command interface to enable/disable Storm types until the next reload: `/stormgr enable impact`
+  - [ ] (Done; _NEEDS TESTING_) Commands for casting certain storms at target players. Thinking something like: `/stormgr cast impact SomePlayerName`
+  - [ ] (Done; _NEEDS TESTING_) Should also add an option for any Storm types to have their own extra command parsing for `cast` calls; consider:
 ```
 /stormgr cast impact SomePlayerName [opt1 opt2 ... optN]
 --- Create an Impact event, instantiated for SomePlayerName
