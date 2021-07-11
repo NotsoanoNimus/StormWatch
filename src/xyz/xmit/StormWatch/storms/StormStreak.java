@@ -92,7 +92,7 @@ public class StormStreak extends Storm {
     }
 
     @Override
-    protected void setPropertiesFromCommand(String[] cmdArgs) { }
+    protected void setPropertiesFromCommand() { }
 
     @Override
     protected final Entity getNextEntity() {

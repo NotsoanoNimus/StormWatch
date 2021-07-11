@@ -19,6 +19,7 @@ import java.util.logging.Level;
  * depending on the server configuration and the administrator's management of the
  * modules themselves.
  */
+// TODO: Add more debugging everywhere.
 public class StormWatch extends JavaPlugin {
     /**
      * Self-referential object representing the single instance of the plugin instantiated
@@ -38,6 +39,10 @@ public class StormWatch extends JavaPlugin {
      * a chance to spawn a new storm type in-game.
      */
     public static final long TickRate = 100L;
+    /**
+     * A generic (and somewhat meaningless) version string that gets updated every now and again.
+     */
+    public static final String VERSION = "0.7.1";
     private final ArrayList<Listener> registeredListeners = new ArrayList<>();
     private StormConfig stormConfig;
     private StormManager stormManager;

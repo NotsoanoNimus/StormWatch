@@ -167,6 +167,7 @@ public final class StormConfig {
      * @param <T> Type of Number extension to instantiate the RangedValue type with.
      * @deprecated
      */
+    // TODO: Revisit this and get it working/tested.
     public static final class RangedValue<T extends Number> {
         private final Random rand = new Random();
         private final Tuple<T,T> valueRange;

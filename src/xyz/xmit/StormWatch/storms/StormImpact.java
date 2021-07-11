@@ -318,7 +318,7 @@ public final class StormImpact extends Storm implements Listener {
     }
 
     @Override
-    protected void setPropertiesFromCommand(String[] cmdArgs) { }
+    protected void setPropertiesFromCommand() { }
 
     @Override
     protected final void doJustBeforeScheduling() {
