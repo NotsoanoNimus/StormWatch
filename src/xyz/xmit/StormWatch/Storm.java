@@ -634,17 +634,21 @@ public abstract class Storm implements StormManager.StormCallback {
                     + " seconds [" + this.getStormDurationTicks() + " TICKS].");
             int ticksLapsed = 0;
             int minTicksBetweenSpawns = 4;  // there needs to be at least 4 ticks between spawn ops; prevents infinite looping
+            int spawnedEntityCount = 0;
             do {
                 //how many ticks to wait until the next scheduled event
                 int ticksTilNextSpawn = this.getRandomInt(this.spawnRateRange);
                 ticksTilNextSpawn = Math.max(minTicksBetweenSpawns, ticksTilNextSpawn);
                 //how many entities to spawn in the scheduled event
                 int howMany = this.isSingleSpawnPerJob() ? 1 : this.getRandomInt(this.spawnAmountRange);
+                spawnedEntityCount += howMany;
                 ticksLapsed += ticksTilNextSpawn;
                 //schedule the entities
                 this.scheduleNextEntities(ticksLapsed, howMany, this);
             } while (ticksLapsed < this.getStormDurationTicks());
             this.debugLog("----- Scheduling complete for new storm.");
+            this.debugLog("------- Spawning total of " + spawnedEntityCount +
+                    " entities over " + ticksLapsed + " server ticks.");
         } else {
             this.debugLog("----- Scheduling DISABLED for this type. Ran commands and left ASAP.");
         }
@@ -669,8 +673,11 @@ public abstract class Storm implements StormManager.StormCallback {
                     if(followPlayer) { updateBaseLocation(); }
                     // Random (LOW) chance to change the storm's direction, if enabled.
                     if(isWindy() && getRandomDouble(0, 1.0) < windyChance) { setNewRandomStormDirection(); }
-                    // Create the fireball (and maybe FallingBlock) entities.
-                    for (int i = 0; i < count; i++) { spawnedEntities.add(instance.getNextEntity()); }
+                    // Create the entities according to the method implementation..
+                    for (int i = 0; i < count; i++) {
+                        var x = instance.getNextEntity();
+                        if(x != null) { spawnedEntities.add(x); }
+                    }
                 } catch (Exception ex) {
                     log(ex, "Problem spawning entity batch");
                 }
@@ -736,15 +743,19 @@ public abstract class Storm implements StormManager.StormCallback {
     protected final int getRandomInt(Tuple<Integer,Integer> range) {
         return this.getRandomInt(range.a(), range.b()); }
     protected final int getRandomInt(int min, int max) {
-        if((max-min) < 0) {
-            return (min - this.rng.nextInt(Math.abs(max-min)));
-        } else {
-            return (this.rng.nextInt(max - min) + min);
-        }
+        try {
+            if ((max - min) < 0) {
+                return (min - this.rng.nextInt(Math.abs(max - min)));
+            } else {
+                return (this.rng.nextInt(max - min) + min);
+            }
+        } catch(Exception ex) { return 0; }
     }
     protected final double getRandomDouble(Tuple<Double,Double> range) {
         return this.getRandomDouble(range.a(), range.b()); }
     protected final double getRandomDouble(double min, double max) {
-        return (this.rng.nextDouble() * (max - min)) + min;
+        try {
+            return (this.rng.nextDouble() * (max - min)) + min;
+        } catch(Exception ex) { return 0.0; }
     }
 }

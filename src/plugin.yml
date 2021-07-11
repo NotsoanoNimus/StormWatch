@@ -1,6 +1,6 @@
 main: xyz.xmit.StormWatch.StormWatch
 name: StormWatch
-version: 0.7.1
+version: 0.7.2
 description: An API for scheduling, managing, and manipulating custom server-side weather events.
 api-version: 1.17
 load: POSTWORLD

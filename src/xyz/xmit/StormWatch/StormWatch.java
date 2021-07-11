@@ -42,7 +42,7 @@ public class StormWatch extends JavaPlugin {
     /**
      * A generic (and somewhat meaningless) version string that gets updated every now and again.
      */
-    public static final String VERSION = "0.7.1";
+    public static final String VERSION = "0.7.2";
     private final ArrayList<Listener> registeredListeners = new ArrayList<>();
     private StormConfig stormConfig;
     private StormManager stormManager;
