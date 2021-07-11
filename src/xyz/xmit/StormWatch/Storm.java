@@ -581,7 +581,17 @@ public abstract class Storm implements StormManager.StormCallback {
         }
 
         // If this is called by command, call the method now that has a chance to override the gotten properties.
-        if(this.isCalledByCommand()) { this.setPropertiesFromCommand(); }
+        if(this.isCalledByCommand()) {
+            try {
+                this.setPropertiesFromCommand();
+            } catch(Exception ex) {
+                StormWatch.log(false, "Commanded Storm CANCELLED! Problem settings Storm properties from the command call.");
+                StormWatch.log(false, ex.getMessage());
+                StormWatch.log(ex);
+                this.setCancelled(true);
+                return;
+            }
+        }
 
 
         // Output console information.
