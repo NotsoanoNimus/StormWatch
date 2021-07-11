@@ -19,6 +19,7 @@ public final class StormShower extends Storm implements Listener {
      * The storm type's registered name.
      */
     public static final String TYPE_NAME = "shower";
+    // TODO: Add an option to allow the meteors to glow.
     private static final HashMap<String, Object> defaultConfig = new HashMap<>() {{
         // Explosive conf keys
         putAll(Storm.defaultExplosiveConfiguration);
@@ -56,7 +57,7 @@ public final class StormShower extends Storm implements Listener {
             x.setIsIncendiary(this.getSetsFires());
             x.setGravity(true);
             x.setBounce(false);
-            x.setSilent(false);
+            x.setSilent(!this.getExplosionEnabled());  // If true, then this should be FALSE (so exp are NOT silent)
             x.setGlowing(false);
         } catch (Exception ex) {
             this.log(ex, "Failed to keep newly-spawned fireball.");
