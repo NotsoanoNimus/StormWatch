@@ -144,8 +144,6 @@ public abstract class Storm implements StormManager.StormCallback {
      * use the {@link #setCancelled(boolean)} method inside of this call, since the CommandExecutor is designed
      * to check for a cancelled Storm before starting it.
      *
-     * @param cmdArgs The remaining parameters sent via the command used the initiate the inorganic Storm.
-     *                The first String value of this array will ALWAYS be the Player's name whom the Storm targets.
      * @see StormWatchCommandExecutor
      * @see #setCancelled(boolean) 
      */
@@ -455,6 +453,7 @@ public abstract class Storm implements StormManager.StormCallback {
         newLoc.setZ(isZRelative ? (newLoc.getZ() + this.getNewZSpawn()) : this.getNewZSpawn());
         return newLoc;
     }
+    public final String getTypeName() { return this.typeName; }
     public final String getName() { return this.typeName; }
     public final Location getBaseSpawnLocation() { return this.baseSpawnLocation; }
     public final Player getTargetPlayer() { return this.targetPlayer; }

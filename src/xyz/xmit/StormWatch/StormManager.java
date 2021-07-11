@@ -34,6 +34,10 @@ public final class StormManager implements Listener {
      * unregister them, or recompiling.
      */
     @SuppressWarnings("unchecked")
+    // TODO: Perhaps move away from this variable. The "shipped" types were made well before the StormManager's
+    //   ability to register Storm types on-demand came to fruition. Removing the special "shipped" status will
+    //   allow the users to treat "shipped" types the same as other custom ones, because they basically are...
+    //   On the contrary, I don't want these names to be overridden.
     public final static Class<? extends Storm>[] REGISTERED_STORMTYPES =
         (Class<? extends Storm>[]) new Class[] {
             StormImpact.class, StormShower.class, StormStreak.class
@@ -42,7 +46,10 @@ public final class StormManager implements Listener {
 
     // Base objects used for managing storm states.
     private final Hashtable<Class<?>, Double> stormChances = new Hashtable<>();   //holds a list of storm occurrence chances.
+    // TODO: Have a big think: can these be cleaned up?
+    // TODO: Test TYPE_NAME and class-path collisions for registrations. Would be exceedingly valuable.
     private final ArrayList<Class<? extends Storm>> registeredStormTypes = new ArrayList<>();   //holds classes that test positively on instantiation
+    private final HashMap<String, String> registeredClassPathsToTypeNames = new HashMap<>();   //class paths to TYPE_NAME fields
     // The below variable is used heavily for ID tracking and cooldown enablement.
     private final HashMap<UUID, Tuple<World, Class<? extends Storm>>> currentStormsMap = new HashMap<>();   //holds current UUIDs mapped to world and storm-type
 
@@ -57,6 +64,10 @@ public final class StormManager implements Listener {
      * Gets a list of all registered Storm extensions that are placed into the plugin's rotation, if config-enabled.
      */
     public final ArrayList<Class<? extends Storm>> getRegisteredStormTypes() { return this.registeredStormTypes; }
+    /**
+     * Gets a list of registered Storm class names that are currently active.
+     */
+    public final HashMap<String, String> getRegisteredClassPathsToTypeNames() { return this.registeredClassPathsToTypeNames; }
     /**
      * Gets the entire map of currently-occurring Storm events. This is a mapping of a unique identifier to a data
      * tuple representing (a) the world in which the Storm event is occurring on the server, and (b) the extension
@@ -98,13 +109,17 @@ public final class StormManager implements Listener {
 
     // Construct a new storm manager object.
     public StormManager() {
+        // TODO: Examine this with the above TODO about REGISTERED_STORMTYPES. This section could be possibly turned
+        //   into one line that says "for each class in StormManager.SHIPPED_TYPES, run registerStormType(theType)"...
         // Test each requested type for validity on instantiation.
         HashMap<Class<?>, Object> baseClasses = new HashMap<>();
         for(Class<? extends Storm> c : StormManager.REGISTERED_STORMTYPES) {
             try {
                 // Creating each object on first run SHOULD also instantiate each valid one's configuration.
-                baseClasses.put(  c,  c.cast( c.getDeclaredConstructor().newInstance() )  );
+                var inst = c.cast( c.getDeclaredConstructor().newInstance() );
+                baseClasses.put(  c,  inst  );
                 this.registeredStormTypes.add(c);
+                this.registeredClassPathsToTypeNames.put(c.getName(), inst.getTypeName());
             } catch (Exception e) {
                 StormWatch.log(e, "~ Problem registering storm type: " + c.getName() + " --- DISABLING TYPE");
             }
@@ -154,24 +169,33 @@ public final class StormManager implements Listener {
         // Prevent duplicate Storm type registrations. This is very important since TYPE_NAME is what
         //   the config.yml write operations use as the root config key. So with the following code,
         //   bad actors are IDEALLY not allowed to overwrite other configurations.
+        // NOTE: This is NOT uniqueness on TYPE_NAME, but on a class path. This was an important distinction
+        //       I ended up fixing below after instantiation.
         for(Object o : this.registeredStormTypes) {
             if(c.getName().toLowerCase(Locale.ROOT).equals(o.getClass().getName().toLowerCase(Locale.ROOT))) {
                 StormWatch.log(false, Level.WARNING,
-                    "~ A storm type with the name " + c.getName() + " is already registered.");
+                    "~ A storm type with the class path '" + c.getName() + "' is already registered.");
                 return false;
             }
         }
         try {
-            //Object x = c.cast( c.getDeclaredConstructor().newInstance() );
+            // Create a new Storm instance for the class.
             Storm z = c.getDeclaredConstructor().newInstance();
+            // Make sure the TYPE_NAME property is a unique value -- very important.
+            if(this.registeredClassPathsToTypeNames.containsValue(z.getTypeName().toLowerCase(Locale.ROOT))) {
+                StormWatch.log(false, Level.WARNING, "~ A storm with type_name '"
+                        + z.getTypeName().toLowerCase(Locale.ROOT) + "' already exists. CANCELLED registration.");
+                return false;
+            }
             // Provided it casts properly, it's a valid type. Register it.
             this.registeredStormTypes.add(c);
+            this.registeredClassPathsToTypeNames.put(c.getName(), z.getTypeName().toLowerCase(Locale.ROOT));
             this.stormChances.put(c, z.getStormChance());
             StormWatch.log(false,
                     "~ STORM TYPE [" + z.getName() + "] ENABLED; spawn chance of: " + z.getStormChance());
         } catch(Exception e) {
             StormWatch.log(false, Level.WARNING,
-                    "~ Problem registering storm type " + c.getName() + " --- DISABLED this type!");
+                    "~ Problem registering storm class '" + c.getName() + "' --- DISABLED this type!");
             return false;
         }
         return true;
@@ -191,6 +215,7 @@ public final class StormManager implements Listener {
             try {
                 if (!Arrays.asList(StormManager.REGISTERED_STORMTYPES).contains(stormType)) {
                     this.registeredStormTypes.remove(stormType);
+                    this.registeredClassPathsToTypeNames.remove(stormType.getName());
                     StormWatch.log(false,
                             "~ Storm extension temporary disabled by un-registration until the next reload: " + stormType.getName());
                     return true;
