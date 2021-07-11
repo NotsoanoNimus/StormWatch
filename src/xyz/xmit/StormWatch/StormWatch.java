@@ -215,8 +215,11 @@ public class StormWatch extends JavaPlugin {
 
         // Register the primary control command executor.
         try {
+            var execAndCompleter = new StormWatchCommandExecutor();
             Objects.requireNonNull(this.getCommand("stormgr"))
-                    .setExecutor(new StormWatchCommandExecutor());
+                    .setExecutor(execAndCompleter);
+            Objects.requireNonNull(this.getCommand("stormgr"))
+                    .setTabCompleter(execAndCompleter);
         } catch (Exception ex) {
             StormWatch.log(false, Level.WARNING,
             "Failed to register the 'stormgr' command executor. Commands will not be executable.");
