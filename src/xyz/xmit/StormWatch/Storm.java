@@ -130,6 +130,8 @@ public abstract class Storm implements StormManager.StormCallback {
     /**
      * Allows an extending sub-class to define type-specific properties and conditions that must be met for the Storm
      * scheduling to proceed. This function is run almost immediately when the {@link #startStorm(Player)} method is called.
+     * However, if a Storm is invoked by command, the {@link #setStrictConditionChecks(boolean)} method is required to be
+     * set as true in the extension class' constructor, or else this method will be skipped.
      * 
      * @return Whether the Storm sub-class is able to run given the checked conditions.
      * @see #startStorm(Player) 
@@ -147,7 +149,7 @@ public abstract class Storm implements StormManager.StormCallback {
      * @see StormWatchCommandExecutor
      * @see #setCancelled(boolean) 
      */
-    protected abstract void setPropertiesFromCommand(String[] cmdArgs);
+    protected abstract void setPropertiesFromCommand();
     /**
      * Create an entity from the Storm, or do Storm-specific actions here. This function implies that it's only used
      * for spawning entities; however, any scheduled task that runs at the spawn amount rate and at the chosen
@@ -240,6 +242,7 @@ public abstract class Storm implements StormManager.StormCallback {
     private boolean cancelled = false; //is the storm attempting to be cancelled?
     private boolean isSingleSpawnPerJob = false; //can be set by heirs to force the `spawnAmountRange` values to be ignored
     private boolean isCalledByCommand = false; //was the storm started by command
+    private boolean strictConditionChecks = false; //whether to ALWAYS perform condition checks on startStorm
     // ^^^ See the "StormSandstorm" module for why this can certainly be a useful tool!
     private Location baseSpawnLocation; //can either follow the player or stay stationary (see below)
     private int stormPitch, stormYaw; //storm "direction", defined by a value between a configurable range
@@ -282,6 +285,7 @@ public abstract class Storm implements StormManager.StormCallback {
     private int chunkLoadingDiameter; //how many chunks the Storm loads from end-to-end of a square area
     private int chunkLoadingUnloadDelay; //delay in seconds to wait after the StormEndEvent finishes to unload the Storm's chunks
     private ArrayList<String> exemptPlayers, exemptWorlds; // exempt worlds and target players for the Storm
+    private String[] commandParams;
 
 
     // Default constructor requires an immutable name field and a configuration object.
@@ -423,12 +427,14 @@ public abstract class Storm implements StormManager.StormCallback {
     public final int getInstanceCooldown() { return this.cooldown; }
     public final int getChunkLoadingDiameter() { return this.chunkLoadingDiameter; }
     public final int getChunkLoadingUnloadDelay() { return this.chunkLoadingUnloadDelay; }
+    public final String[] getCommandParameters() { return this.commandParams; }
     public final boolean isLoadsChunks() { return this.isLoadsChunks; }
     public final boolean isLoadedChunksPersistent() { return this.isLoadedChunksPersistent; }
     public final ArrayList<String> getExemptPlayers() { return this.exemptPlayers; }
     public final boolean isPlayerNameExempt(String playerName) { return this.exemptPlayers.contains(playerName); }
     public final ArrayList<String> getExemptWorlds() { return this.exemptWorlds; }
     public final boolean isWorldNameExempt(String worldName) { return this.exemptPlayers.contains(worldName); }
+    public final boolean isStrictConditionChecks() {return this.strictConditionChecks; }
     /**
      * Gets a new location from configuration-defined coordinate ranges. The returned location can either consider the
      * configuration ranges to be absolute (i.e. in-game coordinates) between which a storm event can spawn, or a
@@ -542,6 +548,10 @@ public abstract class Storm implements StormManager.StormCallback {
     }
     protected final void setStormDurationTicks(int ticks) { this.stormDurationTicks = ticks; }
     protected final void setStormDurationEndPaddingTicks(int padding) { this.stormDurationEndPaddingTicks = padding; }
+    protected final void setStrictConditionChecks(boolean isStrict) { this.strictConditionChecks = isStrict; }
+    protected final void setCommandParameters(String[] cmdArgs) {
+        this.commandParams = cmdArgs;
+    }
     /////
     // Explosive SET/modify methods.
 
@@ -554,14 +564,26 @@ public abstract class Storm implements StormManager.StormCallback {
         this.setTargetPlayer(targetedPlayer);
         this.setNewRandomStormDirection();   //initialize a pitch/yaw for the storm.
         this.updateBaseLocation();   //update the base location.
-        // Attempt to instantiate the sub-class-level properties.
-        if(!this.baseConditionChecks() || !this.stormSpecificConditionChecks()) {
-            this.debugLog("Storm did not pass base condition or storm-specific checks.");
-            this.setCancelled(true); return;
-        } else if(!this.initializeStormTypeProperties()) {
-            this.log(Level.WARNING, "Could not initialize storm-specific properties! IS it configured properly?");
-            this.setCancelled(true); return;
+        // Run the condition checks, only if either (1) the storm is organic, or (2) the Storm is set to use
+        //   condition checks even while being command-called.
+        if(!this.isCalledByCommand() || this.isStrictConditionChecks()) {
+            if(!this.baseConditionChecks() || !this.stormSpecificConditionChecks()) {
+                this.debugLog("Storm did not pass base condition or storm-specific checks.");
+                this.setCancelled(true);
+                return;
+            }
         }
+
+        // Initialize the storm-specific properties.
+        if(!this.initializeStormTypeProperties()) {
+            this.log(Level.WARNING, "Could not initialize storm-specific properties! IS it configured properly?");
+            this.setCancelled(true);
+            return;
+        }
+
+        // If this is called by command, call the method now that has a chance to override the gotten properties.
+        if(this.isCalledByCommand()) { this.setPropertiesFromCommand(); }
+
 
         // Output console information.
         this.debugLog("- Starting storm of type [" + this.typeName +

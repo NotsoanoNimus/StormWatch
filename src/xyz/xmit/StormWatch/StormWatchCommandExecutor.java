@@ -120,9 +120,13 @@ public class StormWatchCommandExecutor implements CommandExecutor {
             return false;
         }
         // After getting the valid target player: give the Storm the params array and start it.
-        s.setPropertiesFromCommand(castParams);
-        if(!s.isCancelled()) { s.startStorm(target); }
-        else { this.whoSent.sendMessage("The Storm event you tried to raise has been prematurely cancelled."); }
+        s.setCommandParameters(castParams);
+        if(!s.isCancelled()) {
+            s.startStorm(target);
+            this.whoSent.sendMessage(ChatColor.GREEN + "Dispatched Storm to player '" + targetPlayerName + "'.");
+        } else {
+            this.whoSent.sendMessage(ChatColor.RED + "The Storm event you tried to cast has been prematurely cancelled.");
+        }
         return true;
     }
 
