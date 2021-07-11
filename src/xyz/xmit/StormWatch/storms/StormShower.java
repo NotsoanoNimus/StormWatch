@@ -4,8 +4,13 @@ import org.bukkit.Material;
 import org.bukkit.entity.*;
 import org.bukkit.event.Listener;
 import xyz.xmit.StormWatch.Storm;
+import xyz.xmit.StormWatch.StormConfig;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.logging.Level;
 
 /**
  * Extends the Storm super-class to create a generic pattern of falling fireballs from
@@ -19,11 +24,22 @@ public final class StormShower extends Storm implements Listener {
      * The storm type's registered name.
      */
     public static final String TYPE_NAME = "shower";
-    // TODO: Add an option to allow the meteors to glow.
+
+    public enum StormShowerConfigurationKeyNames implements StormConfig.ConfigKeySet {
+        SHOWER_GLOWING_FIREBALLS("entities.glowing");
+        public final String label;
+        StormShowerConfigurationKeyNames(String keyText) { this.label = keyText; }
+        public final String getLabel() { return this.label; }
+    }
     private static final HashMap<String, Object> defaultConfig = new HashMap<>() {{
-        // Explosive conf keys
+        // Inherits all "Storm" default required keys and leaves them be.
+        // Uses explosive conf keys
         putAll(Storm.defaultExplosiveConfiguration);
+        // Meteors do not glow by default.
+        put(StormShowerConfigurationKeyNames.SHOWER_GLOWING_FIREBALLS.label, false);
     }};
+
+    private boolean isGlowingFireballs;
 
 
     public StormShower() {
@@ -31,24 +47,48 @@ public final class StormShower extends Storm implements Listener {
     }
 
 
+    public final boolean isGlowingFireballs() { return this.isGlowingFireballs; }
+    public final void setGlowingFireballs(boolean isGlowing) { this.isGlowingFireballs = isGlowing; }
+
+
     @Override
     protected final boolean initializeStormTypeProperties() {
+        try {
+            this.isGlowingFireballs = StormConfig.getConfigValue(this.typeName, StormShowerConfigurationKeyNames.SHOWER_GLOWING_FIREBALLS);
+        } catch(Exception ex) {
+            this.log(Level.WARNING, "~~~ Skipping spawn of Shower type: can't get proper configuration values.");
+            this.log(ex);
+            return false;
+        }
         return true;
     }
 
     @Override
-    protected final boolean stormSpecificConditionChecks() {
-        return true;
-    }
+    protected final boolean stormSpecificConditionChecks() { return true; }
 
     @Override
-    protected void setPropertiesFromCommand() { }
+    protected void setPropertiesFromCommand() {
+        // TODO: Abstract this out into the parent class. This stuff is going to be passed around everywhere.
+        //   But Storms can't just be dismissed when not given extras since some will use this method well even without extra params.
+        if(this.getCommandParameters() == null || this.getCommandParameters().length == 0) {
+            this.debugLog("+++++ Received no additional command parameters. Nothing extra to do.");
+            return;
+        }
+        var cmdArgs = new ArrayList<String>();
+        this.debugLog("+++ Setting properties from Impact cast command.");
+        // Converts all given params to lower-case.
+        for(String s : this.getCommandParameters()) { cmdArgs.add(s.toLowerCase(Locale.ROOT)); }
+        if(cmdArgs.contains("glow")) { this.setGlowingFireballs(true); }
+    }
 
     @Override
     protected final Entity getNextEntity() {
         var spawnBase = this.getNewRelativeLocation(true, false, true);
         // Spawn the entity.
-        var x = (Fireball)spawnBase.getWorld().spawnEntity(spawnBase, EntityType.FIREBALL);
+        Fireball x;
+        try {
+            x = (Fireball)Objects.requireNonNull(spawnBase.getWorld()).spawnEntity(spawnBase, EntityType.FIREBALL);
+        } catch(Exception ex) { return null; }
         x.getLocation().setPitch(this.getStormPitch()); x.getLocation().setYaw(this.getStormYaw());
         x.setVelocity(x.getDirection().multiply(this.getNewSpeed()));
         // A lot of the SHOWER type properties are immutable, similar to STREAK events.
@@ -58,7 +98,7 @@ public final class StormShower extends Storm implements Listener {
             x.setGravity(true);
             x.setBounce(false);
             x.setSilent(!this.getExplosionEnabled());  // If true, then this should be FALSE (so exp are NOT silent)
-            x.setGlowing(false);
+            x.setGlowing(this.isGlowingFireballs());
         } catch (Exception ex) {
             this.log(ex, "Failed to keep newly-spawned fireball.");
             x.remove();
@@ -81,7 +121,5 @@ public final class StormShower extends Storm implements Listener {
     protected final void doJustAfterScheduling() {}
 
     @Override
-    public final void doCleanupAfterStorm() {
-        this.destroySpawnedEntities(); //clean up
-    }
+    public final void doCleanupAfterStorm() { this.destroySpawnedEntities(); }   //clean up
 }
