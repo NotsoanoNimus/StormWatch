@@ -24,7 +24,6 @@ import java.util.logging.Level;
  * @see Storm
  * @see Listener
  */
-// TODO: Change all names from "mystery" to "splash" fully. "Mystery" was an old concept/name that just stuck around.
 public final class StormImpact extends Storm implements Listener {
     /**
      * The storm type's registered name.
@@ -36,12 +35,12 @@ public final class StormImpact extends Storm implements Listener {
      * <a href="https://xmit.xyz/spigot/StormWatch/manual.html" target="_blank">plugin configuration manual</a>.
      */
     public enum StormImpactConfigurationKeyNames implements StormConfig.ConfigKeySet {
-        MYSTERY_ENABLED("splash.enabled"),
-        MYSTERY_TYPES("splash.materialTypes"),
-        MYSTERY_USE_NEARBY_TYPES("splash.intelligentMaterialTypes"),
-        MYSTERY_AMOUNT_RANGE("splash.amountRangeInBlocks"),
-        MYSTERY_VELOCITY_RANGE("splash.velocity.xzFactorRange"),
-        MYSTERY_VERTICAL_IMPULSE_RANGE("splash.velocity.verticalImpulseMultiplierRange"),
+        SPLASH_ENABLED("splash.enabled"),
+        SPLASH_TYPES("splash.materialTypes"),
+        SPLASH_USE_NEARBY_TYPES("splash.intelligentMaterialTypes"),
+        SPLASH_AMOUNT_RANGE("splash.amountRangeInBlocks"),
+        SPLASH_VELOCITY_RANGE("splash.velocity.xzFactorRange"),
+        SPLASH_VERTICAL_IMPULSE_RANGE("splash.velocity.verticalImpulseMultiplierRange"),
         SPLASH_IMPULSE_PROPORTIONAL("splash.velocity.proportionalToMeteorSize"),
         WARNING_SOUND("storm.playsWarningSoundToTarget"),
         METEOR_DIAMETER_RANGE("meteor.diameterRangeInBlocks"),
@@ -78,14 +77,14 @@ public final class StormImpact extends Storm implements Listener {
             put(ExplosiveConfigurationKeyNames.EXPLOSION_DAMAGE_RADIUS.label, 30);
 
             // IMPACT-specific conf keys
-            put(StormImpactConfigurationKeyNames.MYSTERY_USE_NEARBY_TYPES.label, true); // use nearby ground-contact blocks in the "mystery" splash?
-            // ^^ invalidates the MYSTERY_TYPES key value
-            put(StormImpactConfigurationKeyNames.MYSTERY_ENABLED.label, true); //custom subclass config keys
-            put(StormImpactConfigurationKeyNames.MYSTERY_TYPES.label,
+            put(StormImpactConfigurationKeyNames.SPLASH_USE_NEARBY_TYPES.label, true); // use nearby ground-contact blocks in the splash?
+            // ^^ invalidates the SPLASH_TYPES key value
+            put(StormImpactConfigurationKeyNames.SPLASH_ENABLED.label, true); //custom subclass config keys
+            put(StormImpactConfigurationKeyNames.SPLASH_TYPES.label,
                     new String[]{"OBSIDIAN", "NETHERRACK", "BLACKSTONE", "COAL_BLOCK", "BONE_BLOCK"});
-            put(StormImpactConfigurationKeyNames.MYSTERY_AMOUNT_RANGE.label, new int[]{15, 45});
-            put(StormImpactConfigurationKeyNames.MYSTERY_VELOCITY_RANGE.label, new double[]{-0.2, 1.75});
-            put(StormImpactConfigurationKeyNames.MYSTERY_VERTICAL_IMPULSE_RANGE.label, new double[]{0.75, 2.75});
+            put(StormImpactConfigurationKeyNames.SPLASH_AMOUNT_RANGE.label, new int[]{15, 45});
+            put(StormImpactConfigurationKeyNames.SPLASH_VELOCITY_RANGE.label, new double[]{-0.2, 1.75});
+            put(StormImpactConfigurationKeyNames.SPLASH_VERTICAL_IMPULSE_RANGE.label, new double[]{0.75, 2.75});
             put(StormImpactConfigurationKeyNames.SPLASH_IMPULSE_PROPORTIONAL.label, true);
             put(StormImpactConfigurationKeyNames.WARNING_SOUND.label, true);
             put(StormImpactConfigurationKeyNames.METEOR_DIAMETER_RANGE.label, new int[]{3, 8});
@@ -157,12 +156,12 @@ public final class StormImpact extends Storm implements Listener {
     public static ArrayList<BiomesToMaterials> getSplashMaterialsMapping() { return StormImpact.splashMaterialsMapping; }
 
     // Config-based variables.
-    private boolean mysteryEnabled, meteorHollow, leaveDiamondBlock,
-            warningSound, mysterySplashNearbyTypes, meteorCompositionMixed,
+    private boolean splashEnabled, meteorHollow, leaveDiamondBlock,
+            warningSound, splashNearbyTypes, meteorCompositionMixed,
             splashImpulseProportional, yieldProportional, damageProportional;
-    private int mysteryBlocksAmount;
-    private Tuple<Double,Double> mysteryBlocksVelocityFactorRange ,mysteryVerticalImpulseRange;
-    private final ArrayList<Material> mysteryTypes = new ArrayList<>();
+    private int splashBlocksAmount;
+    private Tuple<Double,Double> splashBlocksVelocityFactorRange, splashVerticalImpulseRange;
+    private final ArrayList<Material> splashTypes = new ArrayList<>();
     private final ArrayList<Material> meteorCompositionMaterials = new ArrayList<>();
     private int meteorDiameter;
     private double meteorSpeed;
@@ -179,7 +178,7 @@ public final class StormImpact extends Storm implements Listener {
     /**
      * Gets whether the meteor's "splash" effect is enabled upon impact.
      */
-    public final boolean isMysteryEnabled() { return this.mysteryEnabled; }
+    public final boolean isSplashEnabled() { return this.splashEnabled; }
     /**
      * Gets whether a diamond block will be left over at the site of the meteor impact. Note that
      * this diamond will never place itself in AIR or BEDROCK materials, and as such will replace
@@ -198,7 +197,7 @@ public final class StormImpact extends Storm implements Listener {
     /**
      * Gets whether the meteor's splash effect is composed of nearby material types, based on the impact biome.
      */
-    public final boolean isMysterySplashNearbyTypes() { return this.mysterySplashNearbyTypes; }
+    public final boolean isSplashNearbyTypes() { return this.splashNearbyTypes; }
     /**
      * Gets whether the meteor's composition is composed of a random assortment of predefined block Material
      * types (see: {@link #getMeteorCompositionMaterials()}).
@@ -226,7 +225,7 @@ public final class StormImpact extends Storm implements Listener {
     /**
      * Gets the predetermined amount of splash blocks that will erupt from the top of the meteor on impact.
      */
-    public final int getMysteryBlocksAmount () { return this.mysteryBlocksAmount; }
+    public final int getSplashBlocksAmount() { return this.splashBlocksAmount; }
     /**
      * Gets the diameter, not radius, of the generated meteor sphere as created at the chosen spawn location.
      */
@@ -245,9 +244,9 @@ public final class StormImpact extends Storm implements Listener {
     public final Material getTrackerBlockMaterial() { return this.trackerBlockMaterial; }
     /**
      * Get the types of blocks that are able to erupt from the meteor's impact site, if enabled. These types
-     * will <strong>not matter</strong> if {@link #isMysterySplashNearbyTypes()} returns <em>true</em>.
+     * will <strong>not matter</strong> if {@link #isSplashNearbyTypes()} returns <em>true</em>.
      */
-    public final ArrayList<Material> getMysteryTypes() { return this.mysteryTypes; }
+    public final ArrayList<Material> getSplashTypes() { return this.splashTypes; }
     /**
      * Gets the possible composition types of the impact meteor, whether or not those types are mixed
      * when actually spawning the meteor.
@@ -256,11 +255,11 @@ public final class StormImpact extends Storm implements Listener {
     /**
      * Gets the range of possible values for the splash effect's horizontal (i.e. <em>X-Z</em>) speed multipliers.
      */
-    public final Tuple<Double,Double> getMysteryBlocksVelocityFactorRange() { return this.mysteryBlocksVelocityFactorRange; }
+    public final Tuple<Double,Double> getSplashBlocksVelocityFactorRange() { return this.splashBlocksVelocityFactorRange; }
     /**
      * Gets the range of possible values for the splash effect's vertical speed multiplier.
      */
-    public final Tuple<Double,Double> getMysteryVerticalImpulseRange() { return this.mysteryVerticalImpulseRange; }
+    public final Tuple<Double,Double> getSplashVerticalImpulseRange() { return this.splashVerticalImpulseRange; }
 
 
 
@@ -272,19 +271,19 @@ public final class StormImpact extends Storm implements Listener {
     // Populate IMPACT object-specific configuration and validate.
     protected final boolean initializeStormTypeProperties() {
         // Custom properties
-        Tuple<Integer,Integer> diameterRange, mysteryBlocksRange;
+        Tuple<Integer,Integer> diameterRange, splashBlocksRange;
         var materialTypes = new ArrayList<String>();
         var compositionTypes = new ArrayList<String>();
         try {
             diameterRange = StormConfig.getIntegerRange(this.typeName, StormImpactConfigurationKeyNames.METEOR_DIAMETER_RANGE);
-            mysteryBlocksRange = StormConfig.getIntegerRange(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_AMOUNT_RANGE);
-            this.mysteryBlocksVelocityFactorRange = StormConfig.getDoubleRange(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_VELOCITY_RANGE);
-            this.mysteryVerticalImpulseRange = StormConfig.getDoubleRange(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_VERTICAL_IMPULSE_RANGE);
-            this.mysteryEnabled = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_ENABLED);
+            splashBlocksRange = StormConfig.getIntegerRange(this.typeName, StormImpactConfigurationKeyNames.SPLASH_AMOUNT_RANGE);
+            this.splashBlocksVelocityFactorRange = StormConfig.getDoubleRange(this.typeName, StormImpactConfigurationKeyNames.SPLASH_VELOCITY_RANGE);
+            this.splashVerticalImpulseRange = StormConfig.getDoubleRange(this.typeName, StormImpactConfigurationKeyNames.SPLASH_VERTICAL_IMPULSE_RANGE);
+            this.splashEnabled = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.SPLASH_ENABLED);
             this.meteorHollow = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_HOLLOW);
             this.warningSound = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.WARNING_SOUND);
             this.meteorCompositionMixed = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_MATERIALS_MIXED);
-            this.mysterySplashNearbyTypes = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_USE_NEARBY_TYPES);
+            this.splashNearbyTypes = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.SPLASH_USE_NEARBY_TYPES);
             this.leaveDiamondBlock = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_LEAVE_DIAMOND_BLOCK);
             this.splashImpulseProportional = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.SPLASH_IMPULSE_PROPORTIONAL);
             this.yieldProportional = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_EXPLOSION_YIELD_PROPORTIONAL);
@@ -293,8 +292,8 @@ public final class StormImpact extends Storm implements Listener {
             compositionTypes = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_MATERIALS);
             for(String s : compositionTypes) { this.meteorCompositionMaterials.add(Material.valueOf(s)); }
             //// get material types for splash
-            materialTypes = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.MYSTERY_TYPES);
-            for(String s : materialTypes) { this.mysteryTypes.add(Material.valueOf(s)); }
+            materialTypes = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.SPLASH_TYPES);
+            for(String s : materialTypes) { this.splashTypes.add(Material.valueOf(s)); }
         } catch (Exception e) {
             this.log(Level.WARNING, "~~~ Skipping spawn of IMPACT meteor: can't get proper configuration values.");
             this.log(e);
@@ -303,7 +302,7 @@ public final class StormImpact extends Storm implements Listener {
         // Set custom values (from whichever source: super or above)
         this.meteorSpeed = this.getNewSpeed();
         this.meteorDiameter = this.getRandomInt(diameterRange);
-        this.mysteryBlocksAmount = this.getRandomInt(mysteryBlocksRange);
+        this.splashBlocksAmount = this.getRandomInt(splashBlocksRange);
         this.trackerBlock = null;
         // Forcibly set the storm duration, because this is a one-off, non-scheduled event.
         //   Give the meteor long enough to touch the ground below.
@@ -488,19 +487,19 @@ public final class StormImpact extends Storm implements Listener {
                 this.log(ex);
             }
 
-            // Do mystery splashing if enabled.
-            if(this.mysteryEnabled) {
+            // Do splash if enabled.
+            if(this.splashEnabled) {
                 try {
-                    this.debugLog("Spawning " + this.getMysteryBlocksAmount() + " splash blocks on IMPACT event.");
+                    this.debugLog("Spawning " + this.getSplashBlocksAmount() + " splash blocks on IMPACT event.");
                     // Get the fallen block location on the ground and set the splash spawn up to the
                     //   meteor diameter (+3 padding) above the ground location.
-                    Location mysteryBaseSpawn = block.getLocation().clone();
-                    mysteryBaseSpawn.setY(mysteryBaseSpawn.getY() + meteorDiameter + 3);
-                    // Create a list of all randomized textures from the MYSTERY_TYPES array, or nearby the impact site if enabled.
+                    Location splashBaseSpawn = block.getLocation().clone();
+                    splashBaseSpawn.setY(splashBaseSpawn.getY() + meteorDiameter + 3);
+                    // Create a list of all randomized textures from the SPLASH_TYPES array, or nearby the impact site if enabled.
                     var texturesList = new ArrayList<Material>();
-                    if(!this.mysterySplashNearbyTypes) {
-                        for(int i = 0; i < this.mysteryBlocksAmount; i++) {
-                            texturesList.add(this.mysteryTypes.get(this.rng.nextInt(this.mysteryTypes.size())));
+                    if(!this.splashNearbyTypes) {
+                        for(int i = 0; i < this.splashBlocksAmount; i++) {
+                            texturesList.add(this.splashTypes.get(this.rng.nextInt(this.splashTypes.size())));
                         }
                     } else {
                         var nearbyMaterials = new ArrayList<Material>();
@@ -520,20 +519,20 @@ public final class StormImpact extends Storm implements Listener {
                             try { nearbyMaterials.add(this.trackerBlockMaterial); } catch (Exception ex) { this.log(ex); }
                         }
                         // Finally randomize the textures list for the amount of splash blocks that will be spawning.
-                        for(int i = 0; i < this.mysteryBlocksAmount; i++) {
+                        for(int i = 0; i < this.splashBlocksAmount; i++) {
                             texturesList.add(nearbyMaterials.get(this.rng.nextInt(nearbyMaterials.size())));
                         }
                     }
                     // For each texture type, spawn a new block from the base location and randomize its trajectory based on the impact's inbound yaw.
-                    for (Material mysteryMaterial : texturesList) {
+                    for (Material splashMaterial : texturesList) {
                         int minBaseYaw = this.getStormYaw() - 60;
-                        var t = mysteryBaseSpawn.clone();
+                        var t = splashBaseSpawn.clone();
                         t.setYaw((this.getRandomInt(minBaseYaw, minBaseYaw+120) + 180) % 360);
                         t.setDirection(t.getDirection());
-                        FallingBlock newMysteryBlock = block.getWorld().spawnFallingBlock(t, mysteryMaterial.createBlockData());
-                        double velocityFactor = this.getRandomDouble(this.mysteryBlocksVelocityFactorRange);
-                        double verticalImpulseFactor = this.getRandomDouble(this.mysteryVerticalImpulseRange);
-                        newMysteryBlock.setVelocity(t.getDirection().
+                        FallingBlock newSplashBlock = block.getWorld().spawnFallingBlock(t, splashMaterial.createBlockData());
+                        double velocityFactor = this.getRandomDouble(this.splashBlocksVelocityFactorRange);
+                        double verticalImpulseFactor = this.getRandomDouble(this.splashVerticalImpulseRange);
+                        newSplashBlock.setVelocity(t.getDirection().
                                 multiply(
                                     this.isSplashImpulseProportional()
                                         ? (velocityFactor * Math.max(this.getMeteorDiameter()/5, 1))
@@ -547,7 +546,7 @@ public final class StormImpact extends Storm implements Listener {
                         );
                     }
                 } catch (Exception ex) {
-                    this.log(Level.WARNING, "Unable to create mystery blocks splash effect from IMPACT event.");
+                    this.log(Level.WARNING, "Unable to create splash effect from IMPACT event.");
                     this.log(ex);
                 }
             }
