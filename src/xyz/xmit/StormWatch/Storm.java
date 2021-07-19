@@ -15,7 +15,6 @@ import java.util.*;
 import java.util.logging.Level;
 
 
-
 /**
  * Acts as a base template for any type of custom or shipped weather event that has both a configuration
  * as well as a chance to target a player per-world and spawn. Relevant configuration nodes are read upon
@@ -286,12 +285,29 @@ public abstract class Storm implements StormManager.StormCallback {
     private String[] commandParams;
 
 
+    // TEST CODE - New default config testing.
+    private static HashMap<String, Object> keySetToMap(StormConfig.ConfKeySet[] kv) {
+        var defaultConfMap = new HashMap<String, Object>();
+        for(var keySet : kv) {
+            defaultConfMap.put(keySet.getLabel(), keySet.getDefaultValue());
+        }
+        return defaultConfMap;
+    }
+
+    public Storm(String name, StormConfig.ConfKeySet[] defaultConfKeys) {
+        this(name, Storm.keySetToMap(defaultConfKeys));
+    }
+    // =======================
+
     // Default constructor requires an immutable name field and a configuration object.
     public Storm(String name, Map<String,Object> defaultConfig) {
         if(name == null || name.isEmpty()) {
             this.log(Level.WARNING, "Did not get a valid storm type name. Skipping construction.");
             this.typeName = ""; this.stormId = null;
-            this.setCancelled(true); return;
+            this.setCancelled(true);
+            return;
+        } else if(defaultConfig == null || defaultConfig.isEmpty()) {
+            this.log(Level.WARNING, "Did not receive any kind of default configuration for this type. Is this intentional?");
         }
         // Set the canonicalized typename.
         this.typeName = name.toLowerCase(Locale.ROOT);

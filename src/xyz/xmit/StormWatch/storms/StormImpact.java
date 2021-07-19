@@ -29,6 +29,34 @@ public final class StormImpact extends Storm implements Listener {
      * The storm type's registered name.
      */
     public static final String TYPE_NAME = "impact";
+    public enum StormImpactConfigurationKeys implements StormConfig.ConfKeySet {
+        FOLLOW_PLAYER(RequiredConfigurationKeyNames.FOLLOW_PLAYER.getLabel(), Boolean.class, false),
+        SPLASH_ENABLED("splash.enabled", Boolean.class, true),
+        SPLASH_TYPES("splash.materialTypes", ArrayList.class,
+                new String[] {"OBSIDIAN", "NETHERRACK", "BLACKSTONE", "COAL_BLOCK", "BONE_BLOCK"}),
+        SPLASH_USE_NEARBY_TYPES("splash.intelligentMaterialTypes", Boolean.class, true),
+        SPLASH_AMOUNT_RANGE("splash.amountRangeInBlocks", ArrayList.class, new int[] {15, 45}),
+        SPLASH_VELOCITY_RANGE("splash.velocity.xzFactorRange", ArrayList.class, new double[] {-0.2, 1.75}),
+        SPLASH_VERTICAL_IMPULSE_RANGE("splash.velocity.verticalImpulseMultiplierRange", ArrayList.class, new double[] {0.75, 2.75}),
+        SPLASH_IMPULSE_PROPORTIONAL("splash.velocity.proportionalToMeteorSize", Boolean.class, true),
+        WARNING_SOUND("storm.playsWarningSoundToTarget", Boolean.class, true),
+        METEOR_DOWNWARD_SPEED_RANGE("meteor.downwardSpeedRangeMultiplier", ArrayList.class, new double[] {1.7, 5.0}),
+        METEOR_DIAMETER_RANGE("meteor.diameterRangeInBlocks", ArrayList.class, new int[] {3, 8}),
+        METEOR_HOLLOW("meteor.hollow", Boolean.class, true),
+        METEOR_LEAVE_DIAMOND_BLOCK("meteor.leaveDiamondSurprise", Boolean.class, false),
+        METEOR_MATERIALS("meteor.materialTypes", ArrayList.class, new String[] {"GLOWSTONE", "OBSIDIAN"}),
+        METEOR_MATERIALS_MIXED("meteor.compositionIsMixed", Boolean.class, true),
+        METEOR_EXPLOSION_YIELD_PROPORTIONAL("meteor.explosion.proportionalYield", Boolean.class, true),
+        METEOR_EXPLOSION_DAMAGE_PROPORTIONAL("meteor.explosion.proportionalDamage", Boolean.class, true);
+        private final StormConfig.ConfigKey key;
+        StormImpactConfigurationKeys(String label, Class<?> type, Object defaultValue) {
+            this.key = StormConfig.newConfKey(label, type, defaultValue);
+        }
+        public final String getLabel() { return this.key.getLabel(); }
+        public final Object getDefaultValue() { return this.key.getDefaultValue(); }
+        @Override
+        public final String toString() { return this.key.getLabel(); }
+    }
     /**
      * Required configuration subkeys specific to this storm type, under the primary node: <strong>impact</strong>.
      * For a reference of the effects of each subkey, please consult the
@@ -77,9 +105,9 @@ public final class StormImpact extends Storm implements Listener {
             put(ExplosiveConfigurationKeyNames.EXPLOSION_DAMAGE_RADIUS.label, 30);
 
             // IMPACT-specific conf keys
-            put(StormImpactConfigurationKeyNames.SPLASH_USE_NEARBY_TYPES.label, true); // use nearby ground-contact blocks in the splash?
+            //put(StormImpactConfigurationKeyNames.SPLASH_USE_NEARBY_TYPES.label, true); // use nearby ground-contact blocks in the splash?
             // ^^ invalidates the SPLASH_TYPES key value
-            put(StormImpactConfigurationKeyNames.SPLASH_ENABLED.label, true); //custom subclass config keys
+            //put(StormImpactConfigurationKeyNames.SPLASH_ENABLED.label, true); //custom subclass config keys
             put(StormImpactConfigurationKeyNames.SPLASH_TYPES.label,
                     new String[]{"OBSIDIAN", "NETHERRACK", "BLACKSTONE", "COAL_BLOCK", "BONE_BLOCK"});
             put(StormImpactConfigurationKeyNames.SPLASH_AMOUNT_RANGE.label, new int[]{15, 45});
@@ -265,7 +293,7 @@ public final class StormImpact extends Storm implements Listener {
 
 
     // Class constructor.
-    public StormImpact() { super(StormImpact.TYPE_NAME, StormImpact.defaultConfig); }
+    public StormImpact() { super(StormImpact.TYPE_NAME, StormImpactConfigurationKeys.values()); }
 
 
     // Populate IMPACT object-specific configuration and validate.

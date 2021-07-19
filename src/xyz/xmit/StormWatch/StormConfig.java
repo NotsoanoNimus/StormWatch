@@ -31,6 +31,40 @@ public final class StormConfig {
     public interface ConfigKeySet { String getLabel(); }
 
 
+
+    // TODO: TESTING NEW CONFIGURATION CODE
+
+    public interface ConfKeySet {
+        String getLabel();
+        Object getDefaultValue();
+    }
+
+    public static class ConfigKey<T> implements ConfigKeySet {
+        private final String label;
+        private final Class<?> type;
+        private final T defaultValue;
+
+        public ConfigKey(String confLabel, Class<?> valueType, T defaultValue) {
+            this.label = confLabel;
+            this.type = valueType;
+            this.defaultValue = defaultValue;
+        }
+
+        public final String getLabel() { return this.label; }
+        public final Class<?> getType() { return this.type; }
+        public final T getDefaultValue() { return this.defaultValue; }
+        public final T getConfiguredValue() throws Exception {
+            return StormConfig.getConfigValue(this);
+        }
+    }
+
+    public static <T> ConfigKey<T> newConfKey(String label, Class<?> type, T defaultValue) {
+        return new ConfigKey<T>(label, type, defaultValue);
+    }
+    // ==============================================
+
+
+
     /**
      * Gets the active FileConfiguration used for the StormWatch instance, assigned to a local variable at
      * the time of plugin enablement.
