@@ -22,24 +22,21 @@ public final class StormConfig {
 
     public StormConfig() { this.config = StormWatch.getInstance().getConfig(); }
 
+
+
+    // TODO: TESTING NEW CONFIGURATION CODE
     /**
      * Used for all configuration key-name indexing on a per-Storm basis, and also for
      * the Storm super-class itself.
      *
      * @see Storm
      */
-    public interface ConfigKeySet { String getLabel(); }
-
-
-
-    // TODO: TESTING NEW CONFIGURATION CODE
-
     public interface ConfKeySet {
         String getLabel();
         Object getDefaultValue();
     }
 
-    public static class ConfigKey<T> implements ConfigKeySet {
+    public static class ConfigKey<T> implements ConfKeySet {
         private final String label;
         private final Class<?> type;
         private final T defaultValue;
@@ -75,9 +72,9 @@ public final class StormConfig {
 
 
     /**
-     * See: {@link #getConfigValueNoThrow(String, ConfigKeySet)}
+     * See: {@link #getConfigValueNoThrow(String, ConfKeySet)}
      */
-    public static <T> T getConfigValueNoThrow(ConfigKeySet subKeyNode) {
+    public static <T> T getConfigValueNoThrow(ConfKeySet subKeyNode) {
         return StormConfig.getConfigValueNoThrow("", subKeyNode);
     }
     /**
@@ -86,7 +83,7 @@ public final class StormConfig {
      * fails, and absolves the need for the calling code to wrap the config query in a try-catch statement.
      * See: {@link #getConfigValue(String, String)}
      */
-    public static <T> T getConfigValueNoThrow(String rootNode, ConfigKeySet subKeyNode) {
+    public static <T> T getConfigValueNoThrow(String rootNode, ConfKeySet subKeyNode) {
         if(rootNode.isEmpty()) {
             try {
                 return StormConfig.getConfigValue(subKeyNode);
@@ -111,13 +108,13 @@ public final class StormConfig {
     /**
      * See: {@link #getConfigValue(String, String)}
      */
-    public static <T> T getConfigValue(String rootKey, ConfigKeySet subNodeKey) throws Exception {
+    public static <T> T getConfigValue(String rootKey, ConfKeySet subNodeKey) throws Exception {
         return StormConfig.getConfigValue(rootKey, subNodeKey.getLabel());
     }
     /**
      * See: {@link #getConfigValue(String, String)}
      */
-    public static <T> T getConfigValue(ConfigKeySet baseKey) throws Exception {
+    public static <T> T getConfigValue(ConfKeySet baseKey) throws Exception {
         return StormConfig.getConfigValue("", baseKey.getLabel());
     }
     /**
@@ -132,7 +129,6 @@ public final class StormConfig {
         String targetNode = rootKey.isEmpty() ? subNodeKey : (rootKey + "." + subNodeKey);
         try {
             @SuppressWarnings("unchecked")
-            //T val = (T)StormWatch.getStormConfig().config.get(targetNode);
             T val = (T)StormWatch.getInstance().getConfig().get(targetNode);
             return val;
         } catch (Exception ex) {
@@ -175,7 +171,7 @@ public final class StormConfig {
      * @param value The value to try setting.
      * @return Whether or not the configuration node was set.
      */
-    protected final boolean setConfigValue(String rootKey, ConfigKeySet subNodeKey, Object value) {
+    protected final boolean setConfigValue(String rootKey, ConfKeySet subNodeKey, Object value) {
         String targetNode = rootKey.isEmpty() ? subNodeKey.getLabel() : (rootKey + "." + subNodeKey.getLabel());
         try {
             StormWatch.log(true,
@@ -206,17 +202,30 @@ public final class StormConfig {
         private final Random rand = new Random();
         private final Tuple<T,T> valueRange;
         private T currentValue;
-        public RangedValue(String typeName, ConfigKeySet targetNode) throws Exception {
+        private final Class<T> castedType;
+        public RangedValue(String typeName, ConfKeySet targetNode, Class<T> explicitType) throws Exception {
             this.valueRange = StormConfig.getValueRange(typeName, targetNode);
-            this.currentValue = (T)this.getSomeValue();
+            this.castedType = explicitType;
+            this.setNewCurrentValue();
         }
-        public final Double getSomeValue() {
-            return (this.rand.nextDouble() * (this.valueRange.b().doubleValue() - this.valueRange.a().doubleValue()))
-                    + this.valueRange.a().doubleValue();
+        public final <T> T getSomeValue() {
+            if(this.castedType == Integer.class) {
+                return (T)(Integer)(
+                        (this.rand.nextInt() * (this.valueRange.b().intValue() - this.valueRange.a().intValue()))
+                                + this.valueRange.a().intValue()
+                );
+            } else if(this.castedType == Double.class) {
+                return (T)(Double)(
+                        (this.rand.nextDouble() * (this.valueRange.b().doubleValue() - this.valueRange.a().doubleValue()))
+                        + this.valueRange.a().doubleValue()
+                );
+            } else {
+                return null;
+            }
         }
         public final Tuple<T,T> getValueRange() { return this.valueRange; }
         public final T getCurrentValue() { return this.currentValue; }
-        public final void setNewCurrentValue() { this.currentValue = (T)this.getSomeValue(); }
+        public final void setNewCurrentValue() { this.currentValue = this.getSomeValue(); }
     }
 
 
@@ -229,7 +238,7 @@ public final class StormConfig {
      * @return A tuple of Integer objects representing an inclusive range between the two Integers as bounds.
      * @throws Exception Raises any captured Exception objects higher.
      */
-    public static <T> Tuple<T,T> getValueRange(String typeName, ConfigKeySet subKey) throws Exception {
+    public static <T> Tuple<T,T> getValueRange(String typeName, ConfKeySet subKey) throws Exception {
         ArrayList<T> x = StormConfig.getConfigValue(typeName, subKey);
         return new Tuple<>(x.get(0), x.get(1));
     }
@@ -242,7 +251,7 @@ public final class StormConfig {
      * @return A tuple of Integer objects representing an inclusive range between the two Integers as bounds.
      * @throws Exception Raises any captured Exception objects higher.
      */
-    public static Tuple<Integer,Integer> getIntegerRange(String typeName, ConfigKeySet subKey) throws Exception {
+    public static Tuple<Integer,Integer> getIntegerRange(String typeName, ConfKeySet subKey) throws Exception {
         ArrayList<Integer> x = StormConfig.getConfigValue(typeName, subKey);
         return new Tuple<>(x.get(0), x.get(1));
     }
@@ -254,7 +263,7 @@ public final class StormConfig {
      * @return A tuple of Double objects representing an inclusive range between the two Doubles as bounds.
      * @throws Exception Raises any captured Exception objects higher.
      */
-    public static Tuple<Double,Double> getDoubleRange(String typeName, ConfigKeySet subKey) throws Exception {
+    public static Tuple<Double,Double> getDoubleRange(String typeName, ConfKeySet subKey) throws Exception {
         ArrayList<Double> x = StormConfig.getConfigValue(typeName, subKey);
         return new Tuple<>(x.get(0), x.get(1));
     }
