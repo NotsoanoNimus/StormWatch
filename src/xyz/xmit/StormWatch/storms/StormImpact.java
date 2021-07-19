@@ -71,6 +71,7 @@ public final class StormImpact extends Storm implements Listener {
         SPLASH_VERTICAL_IMPULSE_RANGE("splash.velocity.verticalImpulseMultiplierRange"),
         SPLASH_IMPULSE_PROPORTIONAL("splash.velocity.proportionalToMeteorSize"),
         WARNING_SOUND("storm.playsWarningSoundToTarget"),
+        METEOR_DOWNWARD_SPEED_RANGE("meteor.downwardSpeedRangeMultiplier"),
         METEOR_DIAMETER_RANGE("meteor.diameterRangeInBlocks"),
         METEOR_HOLLOW("meteor.hollow"),
         METEOR_LEAVE_DIAMOND_BLOCK("meteor.leaveDiamondSurprise"),
@@ -115,6 +116,7 @@ public final class StormImpact extends Storm implements Listener {
             put(StormImpactConfigurationKeyNames.SPLASH_VERTICAL_IMPULSE_RANGE.label, new double[]{0.75, 2.75});
             put(StormImpactConfigurationKeyNames.SPLASH_IMPULSE_PROPORTIONAL.label, true);
             put(StormImpactConfigurationKeyNames.WARNING_SOUND.label, true);
+            put(StormImpactConfigurationKeyNames.METEOR_DOWNWARD_SPEED_RANGE.label, new double[]{1.7, 5.0});
             put(StormImpactConfigurationKeyNames.METEOR_DIAMETER_RANGE.label, new int[]{3, 8});
             put(StormImpactConfigurationKeyNames.METEOR_HOLLOW.label, true);
             put(StormImpactConfigurationKeyNames.METEOR_LEAVE_DIAMOND_BLOCK.label, true); // leaves a diamond block at the impact site if true
@@ -188,7 +190,7 @@ public final class StormImpact extends Storm implements Listener {
             warningSound, splashNearbyTypes, meteorCompositionMixed,
             splashImpulseProportional, yieldProportional, damageProportional;
     private int splashBlocksAmount;
-    private Tuple<Double,Double> splashBlocksVelocityFactorRange, splashVerticalImpulseRange;
+    private Tuple<Double,Double> splashBlocksVelocityFactorRange, splashVerticalImpulseRange, meteorDownwardSpeedRange;
     private final ArrayList<Material> splashTypes = new ArrayList<>();
     private final ArrayList<Material> meteorCompositionMaterials = new ArrayList<>();
     private int meteorDiameter;
@@ -288,12 +290,19 @@ public final class StormImpact extends Storm implements Listener {
      * Gets the range of possible values for the splash effect's vertical speed multiplier.
      */
     public final Tuple<Double,Double> getSplashVerticalImpulseRange() { return this.splashVerticalImpulseRange; }
+    /**
+     * Gets the configured range for the downward speed multiplier.
+     */
+    public final Tuple<Double, Double> getMeteorDownwardSpeedRange() { return this.meteorDownwardSpeedRange; }
+    public final double getNewMeteorDownwardSpeed() { return this.getRandomDouble(this.meteorDownwardSpeedRange); }
 
 
 
 
     // Class constructor.
-    public StormImpact() { super(StormImpact.TYPE_NAME, StormImpactConfigurationKeys.values()); }
+    public StormImpact() {
+        super(StormImpact.TYPE_NAME, StormImpactConfigurationKeys.values(), true);
+    }
 
 
     // Populate IMPACT object-specific configuration and validate.
@@ -307,7 +316,8 @@ public final class StormImpact extends Storm implements Listener {
             splashBlocksRange = StormConfig.getIntegerRange(this.typeName, StormImpactConfigurationKeyNames.SPLASH_AMOUNT_RANGE);
             this.splashBlocksVelocityFactorRange = StormConfig.getDoubleRange(this.typeName, StormImpactConfigurationKeyNames.SPLASH_VELOCITY_RANGE);
             this.splashVerticalImpulseRange = StormConfig.getDoubleRange(this.typeName, StormImpactConfigurationKeyNames.SPLASH_VERTICAL_IMPULSE_RANGE);
-            this.splashEnabled = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.SPLASH_ENABLED);
+            this.meteorDownwardSpeedRange = StormConfig.getDoubleRange(this.typeName, StormImpactConfigurationKeyNames.METEOR_DOWNWARD_SPEED_RANGE);
+            this.splashEnabled = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeys.SPLASH_ENABLED.getLabel());
             this.meteorHollow = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_HOLLOW);
             this.warningSound = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.WARNING_SOUND);
             this.meteorCompositionMixed = StormConfig.getConfigValue(this.typeName, StormImpactConfigurationKeyNames.METEOR_MATERIALS_MIXED);
@@ -427,9 +437,8 @@ public final class StormImpact extends Storm implements Listener {
         // Map out the materials to be used in the meteor. If the composition isn't varied, it can be set outside the loop easily.
         Material spawnType = this.meteorCompositionMaterials.get( this.getRandomInt(0, this.meteorCompositionMaterials.size()) );
         // Get a randomized downward speed for the meteor.
-        // TODO: See if this should be configurable or static -- it might not be something that really needs to change.
-        //   But since everything else with the meteor is so customizable, this won't hurt to allow configuration for...
-        double downwardSpeed = -this.getRandomDouble(1.7, 5.0);
+        double downwardSpeed = this.getNewMeteorDownwardSpeed();
+        this.debugLog("Setting IMPACT downward meteor speed multiplier to:   -" + downwardSpeed);
         // Spawn the meteor now.
         for(Location loc : spawnLocations) {
             if(this.meteorCompositionMixed) {
@@ -442,7 +451,7 @@ public final class StormImpact extends Storm implements Listener {
             FallingBlock block = this.getTargetPlayer().getWorld().spawnFallingBlock( loc, spawnType.createBlockData() );
             block.setVelocity(loc.getDirection().multiply(this.meteorSpeed));
             // Give the y-direction a random pace of downward speed.
-            block.setVelocity(new Vector(block.getVelocity().getX(), downwardSpeed, block.getVelocity().getZ()));
+            block.setVelocity(new Vector(block.getVelocity().getX(), -downwardSpeed, block.getVelocity().getZ()));
             // Keeping this for fun. :)
             ////this.setEntityVelocity( block, this.getRandomDouble(this.speedRange) );
             block.setGravity(true); block.setPersistent(true); block.setInvulnerable(true);
